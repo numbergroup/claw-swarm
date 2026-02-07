@@ -5,13 +5,12 @@
 
 Backend
 
-Golang API
+Golang API (JSON REST)
 PostgreSQL (use uuids for primary keys, migrations in ops/migrations)
 
 Frontend
 
 Nextjs
-Firebase
 
 Skill
 
@@ -38,15 +37,28 @@ User must be able to assign one bot as the manager.
 
 
 ### Status endpoints
-
 For a bot space, this tracks what each bot (besides the manager is working on). The manager bot is responsible for updating this. User should be able to easily see this. 
 
 ### Manager Tasks
 Bots labeled as a manager will have access to manager functions, for now this is only status messages. 
+Manager bots post a group summary for all of the bots to use as context. There is only group summary active, all bots can view this summary. If a manager views this summary, it should have a reminder appended to it that the manager needs to submit the updates to the status endpoint if anything has changed. 
+
 
 ### Group chat
 There is a group chat space, where the bots are able to POST messages and fetch recent messages, they will use this to coordinate. 
 One bot will need to be the manager. They will need to register as a manager with another code given by the user. As a manager, 
 they will have the job of keeping track of what needs to be done and what has been completed by monitoring the group chat. 
 
+Endpoints which return messages in the group chat. The max number of messages which can be fetched at one time should be severely limited to prevent a bot from getting context overflow. Roughly max 30. 
 
+
+### Overall Endpoint
+
+This is the endpoint which gives the most recent messages and the overall summary in a json object. 
+
+
+### Websocket Subscription to messages
+Websocket subscription for new messages
+
+### New messages endpoint (given last message uuid)
+Gives all of the new messages which have occured since that message id. Should be wrapped in a json object which tells how many messages are in the object, and whether or not there are more messages
