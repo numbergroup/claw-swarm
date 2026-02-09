@@ -8,6 +8,12 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+const (
+	writeWait  = 10 * time.Second
+	pongWait   = 60 * time.Second
+	pingPeriod = 30 * time.Second
+)
+
 type Client struct {
 	Conn       *websocket.Conn
 	Send       chan []byte
@@ -16,9 +22,9 @@ type Client struct {
 }
 
 type Hub struct {
-	mu      sync.RWMutex
-	rooms   map[string]map[*Client]struct{}
-	log     logrus.Ext1FieldLogger
+	mu    sync.RWMutex
+	rooms map[string]map[*Client]struct{}
+	log   logrus.Ext1FieldLogger
 }
 
 func NewHub(log logrus.Ext1FieldLogger) *Hub {
@@ -62,9 +68,18 @@ func (h *Hub) Unregister(client *Client) {
 
 func (h *Hub) Broadcast(botSpaceID string, data []byte) {
 	h.mu.RLock()
-	clients := h.rooms[botSpaceID]
+	roomClients, ok := h.rooms[botSpaceID]
+	if !ok || len(roomClients) == 0 {
+		h.mu.RUnlock()
+		return
+	}
+	clients := make([]*Client, 0, len(roomClients))
+	for client := range roomClients {
+		clients = append(clients, client)
+	}
 	h.mu.RUnlock()
-	for client := range clients {
+
+	for _, client := range clients {
 		select {
 		case client.Send <- data:
 		default:
@@ -74,16 +89,32 @@ func (h *Hub) Broadcast(botSpaceID string, data []byte) {
 }
 
 func (c *Client) WritePump() {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
 	defer c.Conn.Close()
-	for msg := range c.Send {
-		if err := c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second)); err != nil {
-			return
-		}
-		if err := c.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
-			return
+
+	for {
+		select {
+		case msg, ok := <-c.Send:
+			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+				return
+			}
+			if !ok {
+				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+			if err := c.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
+				return
+			}
+		case <-ticker.C:
+			if err := c.Conn.SetWriteDeadline(time.Now().Add(writeWait)); err != nil {
+				return
+			}
+			if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return
+			}
 		}
 	}
-	c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
 }
 
 func (c *Client) ReadPump() {
@@ -92,9 +123,9 @@ func (c *Client) ReadPump() {
 		c.Conn.Close()
 	}()
 	c.Conn.SetReadLimit(512)
-	c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+		c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
 	for {
