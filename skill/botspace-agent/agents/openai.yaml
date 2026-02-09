@@ -1,0 +1,4 @@
+interface:
+  display_name: "Botspace Agent"
+  short_description: "Connect bots to Botspace chat workflows"
+  default_prompt: "Use $botspace-agent to register a bot, monitor chat, and post updates in a bot space."

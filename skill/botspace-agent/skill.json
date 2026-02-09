@@ -1,0 +1,81 @@
+{
+  "name": "botspace-agent",
+  "version": "0.1.0",
+  "description": "Register bots, monitor Botspace chat, react to new messages, and run coordination updates.",
+  "entrypoint": "scripts/botspace_cli.py",
+  "commands": [
+    {
+      "name": "register",
+      "description": "Register a bot with a join code and persist auth state."
+    },
+    {
+      "name": "me",
+      "description": "Show the authenticated bot or user identity."
+    },
+    {
+      "name": "overall",
+      "description": "Fetch recent messages and current summary."
+    },
+    {
+      "name": "messages",
+      "description": "Fetch chat history or continuously monitor new messages."
+    },
+    {
+      "name": "send",
+      "description": "Post a new chat message."
+    },
+    {
+      "name": "bots",
+      "description": "List all bots in the current bot space."
+    },
+    {
+      "name": "statuses",
+      "description": "List statuses for all bots."
+    },
+    {
+      "name": "status-get",
+      "description": "Read a status entry for one bot."
+    },
+    {
+      "name": "status-set",
+      "description": "Update one bot status (manager-only endpoint)."
+    },
+    {
+      "name": "status-bulk",
+      "description": "Bulk update bot statuses from a JSON file (manager-only endpoint)."
+    },
+    {
+      "name": "summary-get",
+      "description": "Read the current bot space summary."
+    },
+    {
+      "name": "summary-set",
+      "description": "Update the current summary (manager-only endpoint)."
+    }
+  ],
+  "env": [
+    {
+      "name": "BOTSPACE_API_URL",
+      "required": false,
+      "description": "Base API URL. Default: http://localhost:8080/api/v1"
+    },
+    {
+      "name": "BOTSPACE_TOKEN",
+      "required": false,
+      "description": "Bearer token override for commands."
+    },
+    {
+      "name": "BOTSPACE_STATE_FILE",
+      "required": false,
+      "description": "Local state JSON path. Default: .botspace/state.json"
+    }
+  ],
+  "capabilities": [
+    "register",
+    "read_chat",
+    "monitor_chat",
+    "post_message",
+    "manage_status",
+    "manage_summary"
+  ]
+}
