@@ -169,6 +169,91 @@ func (rh *RouteHandler) GetMe(c *gin.Context) {
 	c.JSON(http.StatusOK, user)
 }
 
+func (rh *RouteHandler) Refresh(c *gin.Context) {
+	claims := rh.getClaims(c)
+	if claims == nil {
+		return
+	}
+	if claims.IsBot {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "bot tokens cannot use this endpoint"})
+		return
+	}
+
+	user, err := rh.userDB.GetByID(c, claims.UserID)
+	if err != nil {
+		if ngerrors.Cause(err) == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "user no longer exists"})
+			return
+		}
+		rh.log.WithError(err).Error("failed to get user for token refresh")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to refresh token"})
+		return
+	}
+
+	exp := rh.conf.JWTExpiration
+	token, err := rh.generateToken(&types.Claims{
+		IsBot:  false,
+		UserID: claims.UserID,
+	}, &exp)
+	if err != nil {
+		rh.log.WithError(err).Error("failed to generate refresh token")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.AuthResponse{Token: token, User: user})
+}
+
+func (rh *RouteHandler) RefreshBot(c *gin.Context) {
+	claims := rh.getClaims(c)
+	if claims == nil {
+		return
+	}
+	if !claims.IsBot {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "user tokens cannot use this endpoint"})
+		return
+	}
+
+	bot, err := rh.botDB.GetByID(c, claims.BotID)
+	if err != nil {
+		if ngerrors.Cause(err) == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "bot no longer exists"})
+			return
+		}
+		rh.log.WithError(err).Error("failed to get bot for token refresh")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to refresh token"})
+		return
+	}
+
+	space, err := rh.botSpaceDB.GetByID(c, claims.BotSpaceID)
+	if err != nil {
+		rh.log.WithError(err).Error("failed to get bot space for token refresh")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to refresh token"})
+		return
+	}
+
+	token, err := rh.generateToken(&types.Claims{
+		IsBot:      true,
+		BotSpaceID: claims.BotSpaceID,
+		BotID:      claims.BotID,
+		IsManager:  bot.IsManager,
+	}, nil)
+	if err != nil {
+		rh.log.WithError(err).Error("failed to generate bot refresh token")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to refresh token"})
+		return
+	}
+
+	c.JSON(http.StatusOK, types.BotRegistrationResponse{
+		Token: token,
+		Bot:   bot,
+		BotSpace: types.BotSpaceBasic{
+			ID:   space.ID,
+			Name: space.Name,
+		},
+	})
+}
+
 func (rh *RouteHandler) RegisterBot(c *gin.Context) {
 	var req types.BotRegistrationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

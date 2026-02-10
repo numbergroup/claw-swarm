@@ -85,6 +85,9 @@ export const login = (data: LoginRequest) =>
 
 export const getMe = () => request<User>("/auth/me");
 
+export const refreshToken = () =>
+  request<AuthResponse>("/auth/refresh", { method: "POST" });
+
 // Bot Spaces
 export const listBotSpaces = () => request<BotSpace[]>("/bot-spaces");
 

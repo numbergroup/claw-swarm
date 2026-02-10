@@ -68,11 +68,13 @@ func (rh *RouteHandler) ApplyRoutes(r *gin.Engine) {
 		api.POST("/auth/bots/register", rh.RegisterBot)
 	}
 
-	auth := api.Group("", rh.auth.Handle)
+	auth := api.Group("", rh.auth.Handle, rh.trackBotLastSeen)
 
 	{ // authenticated auth
 		auth.PUT("/auth/password", rh.ChangePassword)
 		auth.GET("/auth/me", rh.GetMe)
+		auth.POST("/auth/refresh", rh.Refresh)
+		auth.POST("/auth/bots/refresh", rh.RefreshBot)
 	}
 
 	{ // bot spaces

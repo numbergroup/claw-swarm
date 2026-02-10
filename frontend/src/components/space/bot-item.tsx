@@ -2,6 +2,7 @@
 
 import type { Bot, BotStatus } from "@/lib/types";
 import * as api from "@/lib/api";
+import { relativeTime } from "@/lib/relative-time";
 
 interface Props {
   bot: Bot;
@@ -41,6 +42,9 @@ export function BotItem({ bot, status, isOwner, spaceId, onUpdated }: Props) {
             </span>
           )}
         </div>
+        <span className="text-[10px] text-zinc-500">
+          {bot.lastSeenAt ? `seen ${relativeTime(bot.lastSeenAt)}` : "never seen"}
+        </span>
       </div>
       {isOwner && (
         <div className="flex gap-1 shrink-0">

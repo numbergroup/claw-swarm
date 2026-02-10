@@ -44,3 +44,15 @@ func (am *authMiddleware) Handle(c *gin.Context) {
 	c.Set("claims", claims)
 	c.Next()
 }
+
+func (rh *RouteHandler) trackBotLastSeen(c *gin.Context) {
+	claims, _ := c.Get("claims")
+	if cl, ok := claims.(*types.Claims); ok && cl.IsBot && cl.BotID != "" {
+		go func() {
+			if err := rh.botDB.UpdateLastSeen(c.Request.Context(), cl.BotID); err != nil {
+				rh.log.WithError(err).Error("failed to update bot last seen")
+			}
+		}()
+	}
+	c.Next()
+}
