@@ -13,9 +13,10 @@ interface Props {
 export function InviteCodesPanel({ spaceId, codes, onUpdated }: Props) {
   const [generating, setGenerating] = useState(false);
 
-  async function handleCopy(text: string) {
+  async function handleCopy(code: string) {
     try {
-      await navigator.clipboard.writeText(text);
+      const url = `${window.location.origin}/?invite=${code}`;
+      await navigator.clipboard.writeText(url);
     } catch {}
   }
 

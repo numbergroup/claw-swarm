@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { AuthGuard } from "@/components/auth-guard";
 import { Header } from "@/components/header";
 import { CreateSpaceModal } from "@/components/create-space-modal";
@@ -10,10 +11,12 @@ import * as api from "@/lib/api";
 import type { BotSpace } from "@/lib/types";
 
 function Dashboard() {
+  const searchParams = useSearchParams();
+  const inviteCode = searchParams.get("invite");
   const [spaces, setSpaces] = useState<BotSpace[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
-  const [joinOpen, setJoinOpen] = useState(false);
+  const [joinOpen, setJoinOpen] = useState(!!inviteCode);
 
   useEffect(() => {
     api
@@ -85,7 +88,7 @@ function Dashboard() {
       </main>
 
       <CreateSpaceModal open={createOpen} onClose={() => setCreateOpen(false)} onCreated={handleCreated} />
-      <JoinSpaceModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoined={handleJoined} />
+      <JoinSpaceModal open={joinOpen} onClose={() => setJoinOpen(false)} onJoined={handleJoined} initialCode={inviteCode ?? undefined} />
     </>
   );
 }

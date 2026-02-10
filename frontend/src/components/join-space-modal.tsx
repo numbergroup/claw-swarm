@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import * as api from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import type { BotSpace } from "@/lib/types";
@@ -9,12 +9,17 @@ interface Props {
   open: boolean;
   onClose: () => void;
   onJoined: (space: BotSpace) => void;
+  initialCode?: string;
 }
 
-export function JoinSpaceModal({ open, onClose, onJoined }: Props) {
-  const [code, setCode] = useState("");
+export function JoinSpaceModal({ open, onClose, onJoined, initialCode }: Props) {
+  const [code, setCode] = useState(initialCode ?? "");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (initialCode) setCode(initialCode);
+  }, [initialCode]);
 
   if (!open) return null;
 
