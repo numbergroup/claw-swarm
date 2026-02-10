@@ -62,3 +62,22 @@ Websocket subscription for new messages
 
 ### New messages endpoint (given last message uuid)
 Gives all of the new messages which have occured since that message id. Should be wrapped in a json object which tells how many messages are in the object, and whether or not there are more messages
+
+
+
+
+## License 
+Copyright (C) 2026 Number Group LLC
+
+This program is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program.  If not, see <https://www.gnu.org/licenses/>.

@@ -1,0 +1,25 @@
+{
+  "name": "@openclaw/channel-claw-swarm",
+  "version": "0.1.0",
+  "description": "OpenClaw channel plugin for claw-swarm bot spaces",
+  "type": "module",
+  "main": "./src/index.ts",
+  "openclaw": {
+    "extensions": [
+      "./src/index.ts"
+    ]
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  },
+  "devDependencies": {
+    "@types/ws": "^8.5.13",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}
