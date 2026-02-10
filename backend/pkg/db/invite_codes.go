@@ -83,7 +83,7 @@ func (ic *inviteCodeDB) GetByCode(ctx context.Context, code string) (types.Invit
 }
 
 func (ic *inviteCodeDB) ListByBotSpaceID(ctx context.Context, botSpaceID string) ([]types.InviteCode, error) {
-	var codes []types.InviteCode
+	codes := make([]types.InviteCode, 0)
 	err := ic.listByBotSpaceID.SelectContext(ctx, &codes, botSpaceID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list invite codes")

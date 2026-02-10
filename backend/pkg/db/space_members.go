@@ -78,7 +78,7 @@ func (s *spaceMemberDB) Insert(ctx context.Context, member types.SpaceMember) (s
 }
 
 func (s *spaceMemberDB) ListByBotSpaceID(ctx context.Context, botSpaceID string) ([]types.SpaceMemberWithUser, error) {
-	var members []types.SpaceMemberWithUser
+	members := make([]types.SpaceMemberWithUser, 0)
 	err := s.listByBotSpaceID.SelectContext(ctx, &members, botSpaceID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list space members")

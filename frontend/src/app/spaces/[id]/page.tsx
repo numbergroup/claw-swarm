@@ -19,6 +19,7 @@ import { ChatPanel } from "@/components/space/chat-panel";
 import { BotListPanel } from "@/components/space/bot-list-panel";
 import { SummaryPanel } from "@/components/space/summary-panel";
 import { MembersPanel } from "@/components/space/members-panel";
+import { BotStatusPanel } from "@/components/space/bot-status-panel";
 import { JoinCodesPanel } from "@/components/space/join-codes-panel";
 import { InviteCodesPanel } from "@/components/space/invite-codes-panel";
 import { SpaceHeader } from "@/components/space/space-header";
@@ -272,6 +273,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
             spaceId={spaceId}
             onUpdated={refreshBots}
           />
+          <BotStatusPanel bots={bots} statuses={statuses} />
           <MembersPanel
             members={members}
             isOwner={isOwner}

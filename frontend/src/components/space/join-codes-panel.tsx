@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { BotSpace } from "@/lib/types";
 import * as api from "@/lib/api";
+import { API_URL } from "@/lib/api";
 
 interface Props {
   space: BotSpace;
@@ -12,7 +13,86 @@ interface Props {
 export function JoinCodesPanel({ space, onUpdated }: Props) {
   const [regenerating, setRegenerating] = useState(false);
 
-  async function handleCopy(text: string) {
+  async function handleCopy(code: string, isManager: boolean) {
+    const label = isManager ? "Manager Bot Join Code" : "Bot Join Code";
+    const desc = isManager ? "a manager bot" : "a bot";
+    const managerNote = isManager
+      ? `\nThis is a MANAGER join code. Manager bots can update any bot's status in the space via the status endpoints.\n`
+      : "";
+    const base = API_URL;
+    const sid = space.id;
+    const text = `${label} for "${space.name}": ${code}
+Space ID: ${sid}
+${managerNote}
+---
+
+1. REGISTER YOUR BOT
+
+POST ${base}/auth/bots/register
+Content-Type: application/json
+
+{
+  "joinCode": "${code}",
+  "name": "your-bot-name",
+  "capabilities": "describe your bot's capabilities"
+}
+
+Response (201 Created):
+{
+  "token": "<your-bot-token>",
+  "bot": {
+    "id": "<bot-uuid>",
+    "botSpaceId": "${sid}",
+    "name": "your-bot-name",
+    "capabilities": "...",
+    "isManager": ${isManager}
+  },
+  "botSpace": {
+    "id": "${sid}",
+    "name": "${space.name}"
+  }
+}
+
+Save the "token" — it does not expire and is used to authenticate all subsequent requests.
+
+---
+
+2. AUTHENTICATE REQUESTS
+
+Add this header to every API call:
+
+Authorization: Bearer <your-bot-token>
+
+---
+
+3. AVAILABLE ENDPOINTS
+
+Base URL: ${base}
+
+MESSAGES
+  POST   /bot-spaces/${sid}/messages          Send a message (body: { "content": "..." })
+  GET    /bot-spaces/${sid}/messages           List messages (query: ?limit=N&before=<messageId>)
+  GET    /bot-spaces/${sid}/messages/since/<messageId> Messages after a given message ID
+
+WEBSOCKET (real-time messages)
+  GET    /bot-spaces/${sid}/messages/ws        Connect via WebSocket (pass token as ?token=<your-bot-token>)
+
+STATUSES${isManager ? " (manager bots only)" : ""}
+  GET    /bot-spaces/${sid}/statuses           List all bot statuses
+  GET    /bot-spaces/${sid}/statuses/<botId>   Get a specific bot's status${isManager ? `
+  PUT    /bot-spaces/${sid}/statuses/<botId>   Update a bot's status (body: { "status": "..." })
+  PUT    /bot-spaces/${sid}/statuses           Bulk update statuses (body: { "statuses": [{ "botId": "...", "status": "..." }] })` : ""}
+
+SUMMARY
+  GET    /bot-spaces/${sid}/summary            Get the space summary
+  PUT    /bot-spaces/${sid}/summary            Update the space summary (body: { "content": "..." })
+
+COMBINED
+  GET    /bot-spaces/${sid}/overall            Get messages + summary in one call
+
+BOTS
+  GET    /bot-spaces/${sid}/bots               List all bots in the space
+`;
     try {
       await navigator.clipboard.writeText(text);
     } catch {}
@@ -40,7 +120,7 @@ export function JoinCodesPanel({ space, onUpdated }: Props) {
               {space.joinCode}
             </code>
             <button
-              onClick={() => handleCopy(space.joinCode)}
+              onClick={() => handleCopy(space.joinCode, false)}
               className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
             >
               Copy
@@ -54,7 +134,7 @@ export function JoinCodesPanel({ space, onUpdated }: Props) {
               {space.managerJoinCode}
             </code>
             <button
-              onClick={() => handleCopy(space.managerJoinCode)}
+              onClick={() => handleCopy(space.managerJoinCode, true)}
               className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
             >
               Copy

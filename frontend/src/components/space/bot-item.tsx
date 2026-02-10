@@ -41,9 +41,6 @@ export function BotItem({ bot, status, isOwner, spaceId, onUpdated }: Props) {
             </span>
           )}
         </div>
-        {status && (
-          <p className="text-xs text-zinc-400 mt-0.5 truncate">{status.status}</p>
-        )}
       </div>
       {isOwner && (
         <div className="flex gap-1 shrink-0">

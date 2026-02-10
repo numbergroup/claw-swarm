@@ -88,7 +88,7 @@ func (m *messageDB) Insert(ctx context.Context, msg types.Message) (string, erro
 }
 
 func (m *messageDB) ListByBotSpaceID(ctx context.Context, botSpaceID string, limit int, before *string) ([]types.Message, error) {
-	var messages []types.Message
+	messages := make([]types.Message, 0)
 
 	if before == nil {
 		err := m.listRecent.SelectContext(ctx, &messages, botSpaceID, limit)
@@ -118,7 +118,7 @@ func (m *messageDB) ListSince(ctx context.Context, botSpaceID string, sinceID st
 		return nil, errors.Wrap(err, "failed to get cursor message created_at")
 	}
 
-	var messages []types.Message
+	messages := make([]types.Message, 0)
 	err = m.listSinceCursor.SelectContext(ctx, &messages, botSpaceID, cursorTime, limit)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list messages since cursor")

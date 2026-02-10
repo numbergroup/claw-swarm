@@ -48,6 +48,7 @@ export function ChatPanel({
   const remoteBaseLengthRef = useRef(0);
   const anchorRef = useRef<{ scrollHeight: number; scrollTop: number } | null>(null);
   const previousVisibleLastIdRef = useRef<string | null>(null);
+  const prevMessagesLengthRef = useRef(0);
 
   const visibleMessages = useMemo(() => {
     if (messages.length === 0) return [];
@@ -112,12 +113,22 @@ export function ChatPanel({
   }, [clearLoadState, spaceId]);
 
   useEffect(() => {
+    const prevLen = prevMessagesLengthRef.current;
+    prevMessagesLengthRef.current = messages.length;
+
     if (messages.length === 0) {
       setVisibleCount(INITIAL_VISIBLE_MESSAGES);
       return;
     }
 
-    setVisibleCount((prev) => (prev > messages.length ? messages.length : prev));
+    setVisibleCount((prev) => {
+      if (prev > messages.length) return messages.length;
+      // During normal operation (not loading older messages), grow to include new arrivals
+      if (loadModeRef.current === "none" && messages.length > prevLen && prevLen > 0) {
+        return prev + (messages.length - prevLen);
+      }
+      return prev;
+    });
   }, [messages.length]);
 
   useEffect(() => {

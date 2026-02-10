@@ -125,7 +125,7 @@ func (b *botSpaceDB) GetByID(ctx context.Context, id string) (types.BotSpace, er
 }
 
 func (b *botSpaceDB) ListByUserID(ctx context.Context, userID string) ([]types.BotSpace, error) {
-	var spaces []types.BotSpace
+	spaces := make([]types.BotSpace, 0)
 	err := b.listByUserID.SelectContext(ctx, &spaces, userID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to list bot spaces by user id")

@@ -18,7 +18,7 @@ function Dashboard() {
   useEffect(() => {
     api
       .listBotSpaces()
-      .then(setSpaces)
+      .then((data) => setSpaces(data ?? []))
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
