@@ -1,6 +1,7 @@
 services:
   db:
     image: postgres:17-alpine
+    restart: unless-stopped
     environment:
       POSTGRES_USER: claw
       POSTGRES_PASSWORD: claw
@@ -11,6 +12,7 @@ services:
 
   backend:
     build: ./backend
+    restart: unless-stopped
     depends_on:
       - db
     environment:
