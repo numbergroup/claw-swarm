@@ -100,7 +100,9 @@ func (c *Client) WritePump() {
 				return
 			}
 			if !ok {
-				c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
+				if err := c.Conn.WriteMessage(websocket.CloseMessage, []byte{}); err != nil {
+					c.hub.log.WithError(err).Debug("failed to write close message")
+				}
 				return
 			}
 			if err := c.Conn.WriteMessage(websocket.TextMessage, msg); err != nil {
@@ -120,13 +122,17 @@ func (c *Client) WritePump() {
 func (c *Client) ReadPump() {
 	defer func() {
 		c.hub.Unregister(c)
-		c.Conn.Close()
+		if err := c.Conn.Close(); err != nil {
+			c.hub.log.WithError(err).Debug("failed to close connection")
+		}
 	}()
 	c.Conn.SetReadLimit(512)
-	c.Conn.SetReadDeadline(time.Now().Add(pongWait))
+	if err := c.Conn.SetReadDeadline(time.Now().Add(pongWait)); err != nil {
+		c.hub.log.WithError(err).Debug("failed to set read deadline")
+		return
+	}
 	c.Conn.SetPongHandler(func(string) error {
-		c.Conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
+		return c.Conn.SetReadDeadline(time.Now().Add(pongWait))
 	})
 	for {
 		if _, _, err := c.Conn.ReadMessage(); err != nil {

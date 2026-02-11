@@ -15,9 +15,10 @@ import (
 
 type Config struct {
 	config.BaseConfig
-	ServerConfig        server.Config
-	PSQL                psql.Config
-	Secrets             []string      `env:"SECRETS" env-default:""`
+	ServerConfig server.Config
+	PSQL         psql.Config
+	Secrets      []string `env:"SECRETS" env-default:""`
+	// #nosec G117
 	JWTSecret           string        `env:"JWT_SECRET"`
 	JWTExpiration       time.Duration `env:"JWT_EXPIRATION" env-default:"24h"`
 	MaxBodySize         int64         `env:"MAX_BODY_SIZE" env-default:"1048576"`

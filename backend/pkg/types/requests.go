@@ -1,13 +1,15 @@
 package types
 
 type SignupRequest struct {
-	Email       string  `json:"email" binding:"required,email"`
+	Email string `json:"email" binding:"required,email"`
+	// #nosec G117
 	Password    string  `json:"password" binding:"required,min=8"`
 	DisplayName *string `json:"displayName"`
 }
 
 type LoginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
+	Email string `json:"email" binding:"required,email"`
+	// #nosec G117
 	Password string `json:"password" binding:"required"`
 }
 

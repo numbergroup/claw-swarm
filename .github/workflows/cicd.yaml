@@ -123,7 +123,7 @@ jobs:
         run: |
           ./cloud-sql-proxy -p 5432 $GCP_PROJECT:$REGION:$SQL_INSTANCE_NAME &
           go install github.com/jackc/tern@latest
-          bash -c '$(go env GOPATH)/bin/tern migrate --user $DB_USER --password "$DB_PASSWORD" --database $DB_NAME --host 127.0.0.1 --port 5432 --migrations ./services/migrations'
+          bash -c '$(go env GOPATH)/bin/tern migrate --user $DB_USER --password "$DB_PASSWORD" --database $DB_NAME --host 127.0.0.1 --port 5432 --migrations ./ops/migrations'
 
   deploy-prod:
     if: github.ref == 'refs/heads/main'
