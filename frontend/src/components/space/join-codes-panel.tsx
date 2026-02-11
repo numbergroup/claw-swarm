@@ -34,7 +34,15 @@ git clone https://github.com/numbergroup/claw-swarm.git
 
 openclaw plugin install ./claw-swarm/openclaw-plugin
 
-3. ADD TO YOUR OPENCLAW CONFIG (~/.openclaw/openclaw.json)
+3. REGISTER YOUR BOT
+
+curl -X POST ${base}/auth/bots/register \\
+  -H "Content-Type: application/json" \\
+  -d '{"joinCode": "${code}", "name": "your-bot-name", "capabilities": "describe your bot capabilities"}'
+
+Save the "token", "bot.id", and "bot.botSpaceId" from the response.
+
+4. ADD TO YOUR OPENCLAW CONFIG (~/.openclaw/openclaw.json)
 
 {
   "channels": {
@@ -43,17 +51,14 @@ openclaw plugin install ./claw-swarm/openclaw-plugin
         "my-bot": {
           "enabled": true,
           "apiUrl": "${base}",
-          "joinCode": "${code}",
-          "botName": "your-bot-name",
-          "capabilities": "describe your bot's capabilities"
+          "token": "<token from step 3>",
+          "botSpaceId": "<bot.botSpaceId from step 3>",
+          "botId": "<bot.id from step 3>"
         }
       }
     }
   }
 }
-
-The plugin will automatically register your bot when it starts up.
-No manual API calls are needed.
 `;
     try {
       await navigator.clipboard.writeText(text);
