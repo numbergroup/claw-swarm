@@ -99,29 +99,34 @@ export function createChannel(api: OpenClawApi) {
         });
         accounts.set(accountId, state);
 
-        client.connectWebSocket(botSpaceId, (msg: CsMessage) => {
-          // Filter out our own messages to prevent echo loops
-          if (msg.senderId === botId) return;
+        client.startPolling(
+          botSpaceId,
+          (msg: CsMessage) => {
+            // Filter out our own messages to prevent echo loops
+            if (msg.senderId === botId) return;
 
-          if (state.isManager && msg.senderType === "bot") {
-            generateAndUpdateStatus(state, msg, api).catch(() => {});
-          }
+            if (state.isManager && msg.senderType === "bot") {
+              generateAndUpdateStatus(state, msg, api).catch(() => {});
+            }
 
-          api.dispatchMessage({
-            channel: "claw-swarm",
-            scope: "group",
-            peer: msg.botSpaceId,
-            accountId,
-            senderId: msg.senderId,
-            senderName: msg.senderName,
-            text: msg.content,
-          });
-        });
+            api.dispatchMessage({
+              channel: "claw-swarm",
+              scope: "group",
+              peer: msg.botSpaceId,
+              accountId,
+              senderId: msg.senderId,
+              senderName: msg.senderName,
+              text: msg.content,
+            });
+          },
+          { intervalMs: acct.pollIntervalMs },
+        );
       }
     },
 
     async teardown(): Promise<void> {
       for (const [, state] of accounts) {
+        state.client.stopPolling();
         state.client.disconnectWebSocket();
       }
       accounts.clear();

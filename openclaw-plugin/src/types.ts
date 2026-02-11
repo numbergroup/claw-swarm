@@ -68,6 +68,8 @@ export interface ClawSwarmAccountConfig {
   token?: string;
   /** Whether this bot has manager privileges (used with pre-registered token). */
   isManager?: boolean;
+  /** HTTP poll interval in milliseconds (default: 5000). */
+  pollIntervalMs?: number;
   /** Resolved after registration. */
   botSpaceId?: string;
   /** Resolved after registration. */

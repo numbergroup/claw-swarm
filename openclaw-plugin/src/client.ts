@@ -19,6 +19,8 @@ export class ClawSwarmClient {
   private onTokenRefresh:
     | ((res: CsBotRegistrationResponse) => void)
     | null = null;
+  private pollTimer: ReturnType<typeof setTimeout> | null = null;
+  private shouldPoll = false;
 
   constructor(apiUrl: string) {
     this.apiUrl = apiUrl.replace(/\/+$/, "");
@@ -108,6 +110,25 @@ export class ClawSwarmClient {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`getMessages failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async getMessagesSince(
+    botSpaceId: string,
+    messageId: string,
+    opts?: { limit?: number },
+  ): Promise<CsMessageListResponse> {
+    const params = new URLSearchParams();
+    if (opts?.limit != null) params.set("limit", String(opts.limit));
+    const qs = params.toString();
+    const url = `${this.apiUrl}/bot-spaces/${botSpaceId}/messages/since/${messageId}${qs ? `?${qs}` : ""}`;
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`getMessagesSince failed (${res.status}): ${text}`);
     }
     return res.json();
   }
@@ -237,5 +258,81 @@ export class ClawSwarmClient {
       this.reconnectTimer = null;
       this.openWebSocket(botSpaceId, onMessage);
     }, delay);
+  }
+
+  // ── HTTP Polling ────────────────────────────────────────────────
+
+  startPolling(
+    botSpaceId: string,
+    onMessage: (msg: CsMessage) => void,
+    opts?: { intervalMs?: number },
+  ): void {
+    this.shouldPoll = true;
+    const intervalMs = opts?.intervalMs ?? 5000;
+    this.initPolling(botSpaceId, onMessage, intervalMs);
+  }
+
+  stopPolling(): void {
+    this.shouldPoll = false;
+    if (this.pollTimer) {
+      clearTimeout(this.pollTimer);
+      this.pollTimer = null;
+    }
+  }
+
+  private async initPolling(
+    botSpaceId: string,
+    onMessage: (msg: CsMessage) => void,
+    intervalMs: number,
+  ): Promise<void> {
+    let cursor: string | undefined;
+    try {
+      const { messages } = await this.getMessages(botSpaceId, { limit: 1 });
+      if (messages.length > 0) {
+        cursor = messages[0].id;
+      }
+    } catch {
+      // If we can't seed, start from the beginning
+    }
+    this.pollLoop(botSpaceId, cursor, onMessage, intervalMs);
+  }
+
+  private async pollLoop(
+    botSpaceId: string,
+    cursor: string | undefined,
+    onMessage: (msg: CsMessage) => void,
+    intervalMs: number,
+  ): Promise<void> {
+    if (!this.shouldPoll) return;
+
+    try {
+      if (cursor) {
+        let hasMore = true;
+        let currentCursor = cursor;
+        while (hasMore) {
+          const resp = await this.getMessagesSince(botSpaceId, currentCursor);
+          for (const msg of resp.messages) {
+            onMessage(msg);
+            currentCursor = msg.id;
+          }
+          hasMore = resp.hasMore;
+        }
+        cursor = currentCursor;
+      } else {
+        // No cursor yet — fetch latest to establish one
+        const { messages } = await this.getMessages(botSpaceId, { limit: 1 });
+        if (messages.length > 0) {
+          cursor = messages[0].id;
+        }
+      }
+    } catch {
+      // Swallow errors and retry on next interval
+    }
+
+    if (!this.shouldPoll) return;
+    this.pollTimer = setTimeout(
+      () => this.pollLoop(botSpaceId, cursor, onMessage, intervalMs),
+      intervalMs,
+    );
   }
 }

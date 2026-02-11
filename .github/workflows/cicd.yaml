@@ -42,7 +42,7 @@ jobs:
       working-directory: backend
       run: go mod download
     - name: setup compose resources
-      run: docker compose up -d --wait postgres
+      run: docker compose up -d --wait db
     - name: Run tests
       working-directory: backend
       run: go test ./... -tags=integration

@@ -15,6 +15,7 @@
       "capabilities": { "type": "string" },
       "token":        { "type": "string" },
       "isManager":    { "type": "boolean" },
+      "pollIntervalMs": { "type": "number" },
       "botSpaceId":   { "type": "string" },
       "botId":        { "type": "string" }
     }
