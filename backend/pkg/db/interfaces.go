@@ -45,6 +45,8 @@ type MessageDB interface {
 	Insert(ctx context.Context, msg types.Message) (string, error)
 	ListByBotSpaceID(ctx context.Context, botSpaceID string, limit int, before *string) ([]types.Message, error)
 	ListSince(ctx context.Context, botSpaceID string, sinceID string, limit int) ([]types.Message, error)
+	ListSpaceIDsExceedingCount(ctx context.Context, maxCount int) ([]string, error)
+	DeleteOlderThanNth(ctx context.Context, botSpaceID string, keep int) (int64, error)
 }
 
 type BotStatusDB interface {

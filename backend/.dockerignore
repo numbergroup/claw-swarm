@@ -3,3 +3,7 @@ bin/
 .gitignore
 *.md
 swagger.yaml
+Dockerfile
+.dockerignore
+CLAUDE.md
+swagger.yaml
