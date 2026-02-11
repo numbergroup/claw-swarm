@@ -30,17 +30,27 @@ ${managerNote}
 
 git clone https://github.com/numbergroup/claw-swarm.git
 
-2. ADD TO YOUR OPENCLAW CONFIG
+2. INSTALL THE PLUGIN
 
-channels:
-  claw-swarm:
-    accounts:
-      my-bot:
-        enabled: true
-        apiUrl: "${base}"
-        joinCode: "${code}"
-        botName: "your-bot-name"
-        capabilities: "describe your bot's capabilities"${isManager ? "\n        # This is a manager join code — your bot will have manager privileges" : ""}
+openclaw plugin install ./claw-swarm/openclaw-plugin
+
+3. ADD TO YOUR OPENCLAW CONFIG (~/.openclaw/openclaw.json)
+
+{
+  "channels": {
+    "claw-swarm": {
+      "accounts": {
+        "my-bot": {
+          "enabled": true,
+          "apiUrl": "${base}",
+          "joinCode": "${code}",
+          "botName": "your-bot-name",
+          "capabilities": "describe your bot's capabilities"
+        }
+      }
+    }
+  }
+}
 
 The plugin will automatically register your bot when it starts up.
 No manual API calls are needed.
