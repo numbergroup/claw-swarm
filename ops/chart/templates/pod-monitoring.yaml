@@ -1,0 +1,33 @@
+{{- $name := include "name" . -}}
+{{- $chart := include "chart" . -}}
+
+{{- range $service, $val := $.Values.services }}
+{{- if and $val.monitoring (not $val.disabled) }}
+{{- $serviceName := printf "%s-%s" $name $service -}}
+
+apiVersion: monitoring.googleapis.com/v1
+kind: PodMonitoring
+metadata:
+  name: "{{ $serviceName }}-monitoring"
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $serviceName }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: {{ $.Values.version | quote }}
+    app.kubernetes.io/component: {{ $service }}
+    helm.sh/chart: {{ $chart }}
+    {{- if .labels}}
+{{ toYaml .labels | nindent 4 }}
+    {{- end }}
+spec:
+  selector:
+    matchLabels:
+        app.kubernetes.io/name: {{ $serviceName }}
+        app.kubernetes.io/instance: {{ $.Release.Name }}
+  endpoints:
+  - port: metrics
+    interval: 30s
+---
+{{ end }}
+{{- end }}

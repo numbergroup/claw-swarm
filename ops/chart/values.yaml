@@ -1,0 +1,68 @@
+version: latest
+image: 
+namespace: default
+projectId: 
+secretName:
+
+serviceAccounts:
+- claw-swarm
+
+cronjobs:
+  history-cleanup:
+    schedule: "0 */1 * * *"
+    command: cleanup
+    serviceAccountName: claw-swarm
+    resources:
+      cpu: 100m
+      memory: 512Mi
+
+services:
+  api:
+    replicas: 1
+    command: api
+    serviceAccountName: claw-swarm
+    resources:
+      cpu: 100m
+      memory: 512Mi
+    paths:
+    - /
+    maxReplicas: 3
+    targetCPUUtil: 70
+
+
+ingress:
+  annotations:
+    nginx.org/mergeable-ingress-type: minion
+  host: claw.numbergroup.xyz
+  tls:
+    - secretName: numbergroup-xyz-tls
+      hosts:
+        - claw.numbergroup.xyz
+
+service:
+  type: ClusterIP
+  port: 80
+  protocol: TCP
+  targetPort: 8080
+
+verbosity: debug
+
+# Shared environment variables
+environment:
+- name: PORT
+  value: "8080"
+- name: DBHOST
+  valueFrom:
+    configMapKeyRef:
+      name: claw-swarm
+      key: db_host
+- name: DBPORT
+  valueFrom:
+    configMapKeyRef:
+      name: claw-swarm
+      key: db_port
+- name: DBNAME
+  valueFrom:
+    configMapKeyRef:
+      name: claw-swarm
+      key: db_name

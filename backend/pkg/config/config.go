@@ -15,16 +15,16 @@ import (
 
 type Config struct {
 	config.BaseConfig
-	ServerConfig       server.Config
-	PSQL               psql.Config
-	Secrets            []string      `env:"SECRETS" env-default:""`
-	JWTSecret          string        `env:"JWT_SECRET"`
-	JWTExpiration      time.Duration `env:"JWT_EXPIRATION" env-default:"24h"`
-	MaxBodySize        int64         `env:"MAX_BODY_SIZE" env-default:"1048576"`
-	MaxMessagesPerPage int           `env:"MAX_MESSAGES_PER_PAGE" env-default:"30"`
-	MaxMessageLength   int           `env:"MAX_MESSAGE_LENGTH" env-default:"10000"`
-	DisableSignup      bool          `env:"DISABLE_SIGNUP" env-default:"false"`
-	MaxMessagesPerSpace int          `env:"MAX_MESSAGES_PER_SPACE" env-default:"500"`
+	ServerConfig        server.Config
+	PSQL                psql.Config
+	Secrets             []string      `env:"SECRETS" env-default:""`
+	JWTSecret           string        `env:"JWT_SECRET"`
+	JWTExpiration       time.Duration `env:"JWT_EXPIRATION" env-default:"24h"`
+	MaxBodySize         int64         `env:"MAX_BODY_SIZE" env-default:"1048576"`
+	MaxMessagesPerPage  int           `env:"MAX_MESSAGES_PER_PAGE" env-default:"30"`
+	MaxMessageLength    int           `env:"MAX_MESSAGE_LENGTH" env-default:"10000"`
+	DisableSignup       bool          `env:"DISABLE_SIGNUP" env-default:"false"`
+	MaxMessagesPerSpace int           `env:"MAX_MESSAGES_PER_SPACE" env-default:"500"`
 }
 
 func (c Config) ConnectPSQL(ctx context.Context) (*sqlx.DB, error) {

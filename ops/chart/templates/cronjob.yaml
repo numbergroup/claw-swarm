@@ -1,0 +1,98 @@
+{{- $name := include "name" . -}}
+{{- $chart := include "chart" . -}}
+
+{{- range $service, $val := $.Values.cronjobs }}
+{{- if not .disabled }}
+{{- $cronjobName := printf "%s-%s" $name $service -}}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: {{ $cronjobName }}
+  namespace: {{ $.Values.namespace }}
+  labels:
+    app.kubernetes.io/name: {{ $cronjobName }}
+    app.kubernetes.io/instance: {{ $.Release.Name }}
+    app.kubernetes.io/managed-by: {{ $.Release.Service }}
+    app.kubernetes.io/version: {{ $.Values.version | quote }}
+    app.kubernetes.io/component: {{ $service }}
+    helm.sh/chart: {{ $chart }}
+    {{- if .labels}}
+{{ toYaml .labels | nindent 4 }}
+    {{- end }}
+spec:
+  schedule: "{{ .schedule }}"
+  suspend: false
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 0
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: {{ $cronjobName }}
+            app.kubernetes.io/instance: {{ $.Release.Name }}
+            app.kubernetes.io/managed-by: {{ $.Release.Service }}
+            app.kubernetes.io/version: {{ $.Values.version | quote }}
+            app.kubernetes.io/component: {{ $service }}
+            helm.sh/chart: {{ $chart }}
+            {{- if .labels}}
+{{ toYaml .labels | nindent 12 }}
+            {{- end }}
+        spec:
+        {{- if .serviceAccountName }}
+          serviceAccountName: {{ .serviceAccountName }}
+        {{- end }}
+          restartPolicy: OnFailure
+          securityContext:
+            runAsNonRoot: true
+            seccompProfile:
+              type: RuntimeDefault
+            fsGroup: 1001
+
+          containers:
+          - name: {{ $service }}
+            securityContext:
+              allowPrivilegeEscalation: false
+              runAsUser: 1001
+              runAsNonRoot: true
+              readOnlyRootFilesystem: true
+              capabilities:
+                drop:
+                  - ALL
+            image: "{{ $.Values.image }}:{{ $.Values.version }}"
+            {{- if .command }}
+            command: [{{ .command }}]
+            {{- if .args }}
+            args: {{- range .args }}
+              - {{.}}
+              {{- end }}
+            {{- end }}
+            {{- end }}
+            imagePullPolicy: Always
+            env:
+              - name: NAME
+                value: {{ $service }}
+              - name: VERSION
+                value: "{{ $.Values.version }}"
+              - name: VERBOSITY
+                value: {{ $.Values.verbosity }}
+              - name: PROJECT_ID
+                value: {{ $.Values.projectId }}
+{{- if $.Values.secretName }}
+              - name: SECRETS
+                value: {{ $.Values.secretName }}
+{{- end }}
+{{ toYaml $.Values.environment | indent 14 }}
+{{- if .environment }}
+{{ toYaml .environment | indent 14 }}
+{{- end }}
+            resources:
+              limits:
+                {{- toYaml .resources | nindent 16 }}
+              requests:
+                {{- toYaml .resources | nindent 16 }}
+
+---
+{{- end }}
+{{- end }}

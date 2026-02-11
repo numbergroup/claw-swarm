@@ -16,7 +16,7 @@ RUN apk add --no-cache ca-certificates curl
 
 COPY --from=builder /app/bin/* /usr/local/bin/
 
-RUN adduser -D -u 1000 claw
+RUN adduser -D -u 1001 claw
 USER claw
 
 EXPOSE 8080
