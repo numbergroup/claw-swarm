@@ -6,6 +6,7 @@ interface AccountState {
   client: ClawSwarmClient;
   botSpaceId: string;
   botId: string;
+  isManager: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +63,8 @@ export function createChannel(api: OpenClawApi) {
         let botSpaceId: string;
         let botId: string;
 
+        let isManager: boolean;
+
         if (acct.token) {
           // Use pre-registered token
           client.setToken(acct.token);
@@ -72,6 +75,7 @@ export function createChannel(api: OpenClawApi) {
           }
           botSpaceId = acct.botSpaceId;
           botId = acct.botId;
+          isManager = acct.isManager ?? false;
         } else {
           // Register via join code
           if (!acct.joinCode) {
@@ -86,14 +90,19 @@ export function createChannel(api: OpenClawApi) {
           );
           botSpaceId = reg.botSpace.id;
           botId = reg.bot.id;
+          isManager = reg.bot.isManager;
         }
 
-        const state: AccountState = { client, botSpaceId, botId };
+        const state: AccountState = { client, botSpaceId, botId, isManager };
         accounts.set(accountId, state);
 
         client.connectWebSocket(botSpaceId, (msg: CsMessage) => {
           // Filter out our own messages to prevent echo loops
           if (msg.senderId === botId) return;
+
+          if (state.isManager && msg.senderType === "bot") {
+            generateAndUpdateStatus(state, msg, api).catch(() => {});
+          }
 
           api.dispatchMessage({
             channel: "claw-swarm",
@@ -115,4 +124,39 @@ export function createChannel(api: OpenClawApi) {
       accounts.clear();
     },
   };
+}
+
+async function generateAndUpdateStatus(
+  state: AccountState,
+  msg: CsMessage,
+  api: OpenClawApi,
+): Promise<void> {
+  const { messages } = await state.client.getMessages(state.botSpaceId, {
+    limit: 20,
+  });
+
+  const transcript = messages
+    .map((m) => `[${m.senderName}]: ${m.content}`)
+    .join("\n");
+
+  const systemPrompt =
+    "You generate short status descriptions for bots in a chat space. " +
+    "Respond with only the status text, no quotes or extra formatting. " +
+    "Keep it under 100 characters.";
+
+  const prompt =
+    `Here is the recent chat history:\n\n${transcript}\n\n` +
+    `Based on the above chat history, write a brief status for the bot named "${msg.senderName}" ` +
+    `that reflects what they are currently doing or talking about.`;
+
+  const generatedStatus: string = await api.generateText({
+    prompt,
+    systemPrompt,
+  });
+
+  await state.client.updateBotStatus(
+    state.botSpaceId,
+    msg.senderId,
+    generatedStatus,
+  );
 }

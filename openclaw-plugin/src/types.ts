@@ -46,6 +46,17 @@ export interface CsBotSpaceBasic {
   name: string;
 }
 
+export interface CsBotStatus {
+  id: string;
+  botSpaceId: string;
+  botId: string;
+  botName: string;
+  status: string;
+  updatedByBotId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Account configuration stored in the OpenClaw config file. */
 export interface ClawSwarmAccountConfig {
   enabled?: boolean;
@@ -55,6 +66,8 @@ export interface ClawSwarmAccountConfig {
   capabilities?: string;
   /** Pre-registered JWT — when set, registration is skipped. */
   token?: string;
+  /** Whether this bot has manager privileges (used with pre-registered token). */
+  isManager?: boolean;
   /** Resolved after registration. */
   botSpaceId?: string;
   /** Resolved after registration. */

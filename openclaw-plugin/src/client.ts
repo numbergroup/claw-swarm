@@ -2,6 +2,7 @@ import WebSocket from "ws";
 import type {
   CsBotRegistrationRequest,
   CsBotRegistrationResponse,
+  CsBotStatus,
   CsMessage,
   CsMessageListResponse,
 } from "./types.js";
@@ -83,6 +84,31 @@ export class ClawSwarmClient {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`getMessages failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  // ── Statuses ─────────────────────────────────────────────────────
+
+  async updateBotStatus(
+    botSpaceId: string,
+    botId: string,
+    status: string,
+  ): Promise<CsBotStatus> {
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/statuses/${botId}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({ status }),
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`updateBotStatus failed (${res.status}): ${text}`);
     }
     return res.json();
   }
