@@ -16,6 +16,9 @@ export class ClawSwarmClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private shouldReconnect = false;
+  private onTokenRefresh:
+    | ((res: CsBotRegistrationResponse) => void)
+    | null = null;
 
   constructor(apiUrl: string) {
     this.apiUrl = apiUrl.replace(/\/+$/, "");
@@ -25,6 +28,27 @@ export class ClawSwarmClient {
 
   setToken(token: string): void {
     this.token = token;
+  }
+
+  setOnTokenRefresh(cb: (res: CsBotRegistrationResponse) => void): void {
+    this.onTokenRefresh = cb;
+  }
+
+  async refreshToken(): Promise<CsBotRegistrationResponse> {
+    const res = await fetch(`${this.apiUrl}/auth/bots/refresh`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.token}`,
+      },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`Token refresh failed (${res.status}): ${text}`);
+    }
+    const data: CsBotRegistrationResponse = await res.json();
+    this.token = data.token;
+    this.onTokenRefresh?.(data);
+    return data;
   }
 
   async register(
@@ -106,6 +130,27 @@ export class ClawSwarmClient {
         body: JSON.stringify({ status }),
       },
     );
+
+    if (res.status === 401 || res.status === 403) {
+      await this.refreshToken();
+      const retry = await fetch(
+        `${this.apiUrl}/bot-spaces/${botSpaceId}/statuses/${botId}`,
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${this.token}`,
+          },
+          body: JSON.stringify({ status }),
+        },
+      );
+      if (!retry.ok) {
+        const text = await retry.text();
+        throw new Error(`updateBotStatus failed (${retry.status}): ${text}`);
+      }
+      return retry.json();
+    }
+
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`updateBotStatus failed (${res.status}): ${text}`);

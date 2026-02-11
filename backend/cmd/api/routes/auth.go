@@ -13,7 +13,16 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+func (rh *RouteHandler) SignupEnabled(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"enabled": !rh.conf.DisableSignup})
+}
+
 func (rh *RouteHandler) Signup(c *gin.Context) {
+	if rh.conf.DisableSignup {
+		c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "signups are currently disabled"})
+		return
+	}
+
 	var req types.SignupRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})

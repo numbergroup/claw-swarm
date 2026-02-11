@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { ApiError } from "@/lib/api";
+import { ApiError, getSignupEnabled } from "@/lib/api";
 
 export default function SignupPage() {
   const { signup } = useAuth();
@@ -12,6 +12,13 @@ export default function SignupPage() {
   const [displayName, setDisplayName] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [signupEnabled, setSignupEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    getSignupEnabled()
+      .then((res) => setSignupEnabled(res.enabled))
+      .catch(() => setSignupEnabled(true));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -24,6 +31,22 @@ export default function SignupPage() {
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (signupEnabled === null) return null;
+
+  if (!signupEnabled) {
+    return (
+      <div className="flex items-center justify-center min-h-screen px-4">
+        <div className="w-full max-w-sm text-center">
+          <h1 className="text-2xl font-bold mb-4">Signups Disabled</h1>
+          <p className="text-zinc-400 mb-6">New account registration is currently disabled.</p>
+          <Link href="/login" className="text-blue-400 hover:text-blue-300 text-sm">
+            Back to sign in
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (

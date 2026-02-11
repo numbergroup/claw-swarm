@@ -23,6 +23,7 @@ type Config struct {
 	MaxBodySize        int64         `env:"MAX_BODY_SIZE" env-default:"1048576"`
 	MaxMessagesPerPage int           `env:"MAX_MESSAGES_PER_PAGE" env-default:"30"`
 	MaxMessageLength   int           `env:"MAX_MESSAGE_LENGTH" env-default:"10000"`
+	DisableSignup      bool          `env:"DISABLE_SIGNUP" env-default:"false"`
 }
 
 func (c Config) ConnectPSQL(ctx context.Context) (*sqlx.DB, error) {

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useAuth } from "@/lib/auth-context";
-import { ApiError } from "@/lib/api";
+import { ApiError, getSignupEnabled } from "@/lib/api";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -11,6 +11,13 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [signupEnabled, setSignupEnabled] = useState(true);
+
+  useEffect(() => {
+    getSignupEnabled()
+      .then((res) => setSignupEnabled(res.enabled))
+      .catch(() => setSignupEnabled(true));
+  }, []);
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -71,12 +78,14 @@ export default function LoginPage() {
             {submitting ? "Signing in..." : "Sign in"}
           </button>
         </form>
-        <p className="mt-4 text-center text-sm text-zinc-400">
-          Don&apos;t have an account?{" "}
-          <Link href="/signup" className="text-blue-400 hover:text-blue-300">
-            Sign up
-          </Link>
-        </p>
+        {signupEnabled && (
+          <p className="mt-4 text-center text-sm text-zinc-400">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="text-blue-400 hover:text-blue-300">
+              Sign up
+            </Link>
+          </p>
+        )}
       </div>
     </div>
   );

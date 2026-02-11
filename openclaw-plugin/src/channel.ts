@@ -94,6 +94,9 @@ export function createChannel(api: OpenClawApi) {
         }
 
         const state: AccountState = { client, botSpaceId, botId, isManager };
+        client.setOnTokenRefresh((res) => {
+          state.isManager = res.bot.isManager;
+        });
         accounts.set(accountId, state);
 
         client.connectWebSocket(botSpaceId, (msg: CsMessage) => {

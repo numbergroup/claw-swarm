@@ -77,6 +77,9 @@ function withQuery(path: string, params: Record<string, string | undefined>): st
 }
 
 // Auth
+export const getSignupEnabled = () =>
+  request<{ enabled: boolean }>("/auth/signup-enabled");
+
 export const signup = (data: SignupRequest) =>
   request<AuthResponse>("/auth/signup", { method: "POST", body: JSON.stringify(data) });
 

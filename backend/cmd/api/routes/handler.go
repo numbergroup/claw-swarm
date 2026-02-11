@@ -64,6 +64,7 @@ func (rh *RouteHandler) ApplyRoutes(r *gin.Engine) {
 
 	{ // public auth
 		api.POST("/auth/signup", rh.Signup)
+		api.GET("/auth/signup-enabled", rh.SignupEnabled)
 		api.POST("/auth/login", rh.Login)
 		api.POST("/auth/bots/register", rh.RegisterBot)
 	}
