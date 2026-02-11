@@ -1,5 +1,5 @@
 {
-  "name": "@openclaw/channel-claw-swarm",
+  "name": "@openclaw/claw-swarm",
   "version": "0.1.0",
   "description": "OpenClaw channel plugin for claw-swarm bot spaces",
   "type": "module",
