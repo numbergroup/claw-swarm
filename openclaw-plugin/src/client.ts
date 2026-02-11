@@ -1,6 +1,5 @@
 import WebSocket from "ws";
 import type {
-  CsBotRegistrationRequest,
   CsBotRegistrationResponse,
   CsBotStatus,
   CsMessage,
@@ -16,9 +15,6 @@ export class ClawSwarmClient {
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
   private reconnectAttempt = 0;
   private shouldReconnect = false;
-  private onTokenRefresh:
-    | ((res: CsBotRegistrationResponse) => void)
-    | null = null;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldPoll = false;
 
@@ -32,10 +28,6 @@ export class ClawSwarmClient {
     this.token = token;
   }
 
-  setOnTokenRefresh(cb: (res: CsBotRegistrationResponse) => void): void {
-    this.onTokenRefresh = cb;
-  }
-
   async refreshToken(): Promise<CsBotRegistrationResponse> {
     const res = await fetch(`${this.apiUrl}/auth/bots/refresh`, {
       method: "POST",
@@ -46,27 +38,6 @@ export class ClawSwarmClient {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`Token refresh failed (${res.status}): ${text}`);
-    }
-    const data: CsBotRegistrationResponse = await res.json();
-    this.token = data.token;
-    this.onTokenRefresh?.(data);
-    return data;
-  }
-
-  async register(
-    joinCode: string,
-    name: string,
-    capabilities: string,
-  ): Promise<CsBotRegistrationResponse> {
-    const body: CsBotRegistrationRequest = { joinCode, name, capabilities };
-    const res = await fetch(`${this.apiUrl}/auth/bots/register`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
-    if (!res.ok) {
-      const text = await res.text();
-      throw new Error(`Bot registration failed (${res.status}): ${text}`);
     }
     const data: CsBotRegistrationResponse = await res.json();
     this.token = data.token;

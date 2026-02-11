@@ -61,17 +61,9 @@ export interface CsBotStatus {
 export interface ClawSwarmAccountConfig {
   enabled?: boolean;
   apiUrl?: string;
-  joinCode?: string;
-  botName?: string;
-  capabilities?: string;
-  /** Pre-registered JWT — when set, registration is skipped. */
-  token?: string;
-  /** Whether this bot has manager privileges (used with pre-registered token). */
-  isManager?: boolean;
+  token: string;
+  botSpaceId: string;
+  botId: string;
   /** HTTP poll interval in milliseconds (default: 5000). */
   pollIntervalMs?: number;
-  /** Resolved after registration. */
-  botSpaceId?: string;
-  /** Resolved after registration. */
-  botId?: string;
 }

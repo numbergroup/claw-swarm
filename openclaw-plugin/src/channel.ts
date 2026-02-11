@@ -1,13 +1,11 @@
 import { ClawSwarmClient } from "./client.js";
 import { listAccountIds, resolveAccount } from "./config.js";
-import { loadState, saveAccountState } from "./state.js";
 import type { CsMessage } from "./types.js";
 
 interface AccountState {
   client: ClawSwarmClient;
   botSpaceId: string;
   botId: string;
-  isManager: boolean;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -61,80 +59,17 @@ export function createChannel(api: OpenClawApi) {
 
         const client = new ClawSwarmClient(acct.apiUrl!);
 
-        let botSpaceId = "";
-        let botId = "";
-        let isManager = false;
-
-        if (acct.token) {
-          // Use pre-registered token
-          client.setToken(acct.token);
-          if (!acct.botSpaceId || !acct.botId) {
-            throw new Error(
-              `claw-swarm account "${accountId}": when using a pre-registered token, botSpaceId and botId are required`,
-            );
-          }
-          botSpaceId = acct.botSpaceId;
-          botId = acct.botId;
-          isManager = acct.isManager ?? false;
-        } else {
-          // Try restoring credentials from local state file
-          const stateFile = await loadState();
-          const saved = stateFile.accounts[accountId];
-          let restored = false;
-
-          if (saved) {
-            try {
-              client.setToken(saved.token);
-              const refreshed = await client.refreshToken();
-              botSpaceId = saved.botSpaceId;
-              botId = saved.botId;
-              isManager = refreshed.bot.isManager;
-              await saveAccountState(accountId, {
-                token: refreshed.token,
-                botId,
-                botSpaceId,
-                isManager,
-              });
-              restored = true;
-            } catch {
-              // Saved credentials invalid, fall through to register
-            }
-          }
-
-          if (!restored) {
-            // Register via join code
-            if (!acct.joinCode) {
-              throw new Error(
-                `claw-swarm account "${accountId}": either joinCode or token is required`,
-              );
-            }
-            const reg = await client.register(
-              acct.joinCode,
-              acct.botName || "openclaw-agent",
-              acct.capabilities || "AI assistant",
-            );
-            botSpaceId = reg.botSpace.id;
-            botId = reg.bot.id;
-            isManager = reg.bot.isManager;
-            await saveAccountState(accountId, {
-              token: reg.token,
-              botId,
-              botSpaceId,
-              isManager,
-            });
-          }
+        if (!acct.token || !acct.botSpaceId || !acct.botId) {
+          throw new Error(
+            `claw-swarm account "${accountId}": token, botSpaceId, and botId are required`,
+          );
         }
 
-        const state: AccountState = { client, botSpaceId, botId, isManager };
-        client.setOnTokenRefresh((res) => {
-          state.isManager = res.bot.isManager;
-          saveAccountState(accountId, {
-            token: res.token,
-            botId: state.botId,
-            botSpaceId: state.botSpaceId,
-            isManager: res.bot.isManager,
-          }).catch(() => {});
-        });
+        client.setToken(acct.token);
+        const botSpaceId = acct.botSpaceId;
+        const botId = acct.botId;
+
+        const state: AccountState = { client, botSpaceId, botId };
         accounts.set(accountId, state);
 
         client.startPolling(
@@ -142,10 +77,6 @@ export function createChannel(api: OpenClawApi) {
           (msg: CsMessage) => {
             // Filter out our own messages to prevent echo loops
             if (msg.senderId === botId) return;
-
-            if (state.isManager && msg.senderType === "bot") {
-              generateAndUpdateStatus(state, msg, api).catch(() => {});
-            }
 
             api.dispatchMessage({
               channel: "claw-swarm",
@@ -170,39 +101,4 @@ export function createChannel(api: OpenClawApi) {
       accounts.clear();
     },
   };
-}
-
-async function generateAndUpdateStatus(
-  state: AccountState,
-  msg: CsMessage,
-  api: OpenClawApi,
-): Promise<void> {
-  const { messages } = await state.client.getMessages(state.botSpaceId, {
-    limit: 20,
-  });
-
-  const transcript = messages
-    .map((m) => `[${m.senderName}]: ${m.content}`)
-    .join("\n");
-
-  const systemPrompt =
-    "You generate short status descriptions for bots in a chat space. " +
-    "Respond with only the status text, no quotes or extra formatting. " +
-    "Keep it under 100 characters.";
-
-  const prompt =
-    `Here is the recent chat history:\n\n${transcript}\n\n` +
-    `Based on the above chat history, write a brief status for the bot named "${msg.senderName}" ` +
-    `that reflects what they are currently doing or talking about.`;
-
-  const generatedStatus: string = await api.generateText({
-    prompt,
-    systemPrompt,
-  });
-
-  await state.client.updateBotStatus(
-    state.botSpaceId,
-    msg.senderId,
-    generatedStatus,
-  );
 }
