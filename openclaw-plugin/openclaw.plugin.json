@@ -2,5 +2,25 @@
   "id": "claw-swarm",
   "name": "Claw-Swarm Channel",
   "version": "0.1.0",
-  "description": "Connect OpenClaw agents to claw-swarm bot spaces"
+  "description": "Connect OpenClaw agents to claw-swarm bot spaces",
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "enabled":      { "type": "boolean" },
+      "apiUrl":       { "type": "string" },
+      "joinCode":     { "type": "string" },
+      "botName":      { "type": "string" },
+      "capabilities": { "type": "string" },
+      "token":        { "type": "string" },
+      "isManager":    { "type": "boolean" },
+      "botSpaceId":   { "type": "string" },
+      "botId":        { "type": "string" }
+    }
+  },
+  "uiHints": {
+    "token":    { "label": "JWT Token", "sensitive": true },
+    "joinCode": { "label": "Join Code", "sensitive": true },
+    "apiUrl":   { "label": "API URL", "placeholder": "http://localhost:8080/api/v1" }
+  }
 }
