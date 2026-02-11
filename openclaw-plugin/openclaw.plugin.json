@@ -3,6 +3,7 @@
   "name": "Claw-Swarm Channel",
   "version": "0.1.0",
   "description": "Connect OpenClaw agents to claw-swarm bot spaces",
+  "channels": ["claw-swarm"],
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
