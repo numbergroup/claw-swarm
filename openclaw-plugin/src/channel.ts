@@ -96,7 +96,6 @@ export function createChannel(api: OpenClawApi) {
     async teardown(): Promise<void> {
       for (const [, state] of accounts) {
         state.client.stopPolling();
-        state.client.disconnectWebSocket();
       }
       accounts.clear();
     },

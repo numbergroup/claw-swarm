@@ -1,4 +1,3 @@
-import WebSocket from "ws";
 import type {
   CsBotRegistrationResponse,
   CsBotStatus,
@@ -6,16 +5,11 @@ import type {
   CsMessageListResponse,
 } from "./types.js";
 
-const MAX_RECONNECT_DELAY_MS = 30_000;
 const TAG = "[ClawSwarmClient]";
 
 export class ClawSwarmClient {
   private apiUrl: string;
   private token: string | null = null;
-  private ws: WebSocket | null = null;
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-  private reconnectAttempt = 0;
-  private shouldReconnect = false;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldPoll = false;
 
@@ -161,96 +155,6 @@ export class ClawSwarmClient {
     }
     console.debug(TAG, "updateBotStatus: success");
     return res.json();
-  }
-
-  // ── WebSocket ─────────────────────────────────────────────────────
-
-  connectWebSocket(
-    botSpaceId: string,
-    onMessage: (msg: CsMessage) => void,
-  ): void {
-    console.debug(TAG, "connectWebSocket: botSpaceId=%s", botSpaceId);
-    this.shouldReconnect = true;
-    this.reconnectAttempt = 0;
-    this.openWebSocket(botSpaceId, onMessage);
-  }
-
-  disconnectWebSocket(): void {
-    console.debug(TAG, "disconnectWebSocket");
-    this.shouldReconnect = false;
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer);
-      this.reconnectTimer = null;
-    }
-    if (this.ws) {
-      this.ws.removeAllListeners();
-      this.ws.close();
-      this.ws = null;
-    }
-  }
-
-  private openWebSocket(
-    botSpaceId: string,
-    onMessage: (msg: CsMessage) => void,
-  ): void {
-    const wsScheme = this.apiUrl.startsWith("https") ? "wss" : "ws";
-    const host = this.apiUrl.replace(/^https?:\/\//, "");
-    const url = `${wsScheme}://${host}/bot-spaces/${botSpaceId}/messages/ws?token=${this.token}`;
-    console.debug(TAG, "openWebSocket: connecting to %s", url.replace(/token=[^&]+/, "token=***"));
-
-    const ws = new WebSocket(url);
-    this.ws = ws;
-
-    ws.on("open", () => {
-      console.debug(TAG, "ws open");
-      this.reconnectAttempt = 0;
-    });
-
-    ws.on("ping", () => {
-      console.debug(TAG, "ws ping");
-      ws.pong();
-    });
-
-    ws.on("message", (data) => {
-      try {
-        const msg: CsMessage = JSON.parse(data.toString());
-        console.debug(TAG, "ws message: id=%s", msg.id);
-        onMessage(msg);
-      } catch {
-        // Ignore non-JSON frames (e.g. control messages)
-      }
-    });
-
-    ws.on("close", () => {
-      console.debug(TAG, "ws close");
-      this.ws = null;
-      this.scheduleReconnect(botSpaceId, onMessage);
-    });
-
-    ws.on("error", (err) => {
-      console.debug(TAG, "ws error: %s", err.message);
-      // `close` fires after `error`, reconnect is handled there
-      ws.close();
-    });
-  }
-
-  private scheduleReconnect(
-    botSpaceId: string,
-    onMessage: (msg: CsMessage) => void,
-  ): void {
-    if (!this.shouldReconnect) return;
-
-    const delay = Math.min(
-      1000 * 2 ** this.reconnectAttempt,
-      MAX_RECONNECT_DELAY_MS,
-    );
-    this.reconnectAttempt++;
-    console.debug(TAG, "scheduleReconnect: attempt=%d delay=%dms", this.reconnectAttempt, delay);
-
-    this.reconnectTimer = setTimeout(() => {
-      this.reconnectTimer = null;
-      this.openWebSocket(botSpaceId, onMessage);
-    }, delay);
   }
 
   // ── HTTP Polling ────────────────────────────────────────────────
