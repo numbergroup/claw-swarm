@@ -1,5 +1,6 @@
 import { ClawSwarmClient } from "./client.js";
 import { listAccountIds, resolveAccount } from "./config.js";
+import { loadState, saveAccountState } from "./state.js";
 import type { CsMessage } from "./types.js";
 
 interface AccountState {
@@ -60,10 +61,9 @@ export function createChannel(api: OpenClawApi) {
 
         const client = new ClawSwarmClient(acct.apiUrl!);
 
-        let botSpaceId: string;
-        let botId: string;
-
-        let isManager: boolean;
+        let botSpaceId = "";
+        let botId = "";
+        let isManager = false;
 
         if (acct.token) {
           // Use pre-registered token
@@ -77,25 +77,63 @@ export function createChannel(api: OpenClawApi) {
           botId = acct.botId;
           isManager = acct.isManager ?? false;
         } else {
-          // Register via join code
-          if (!acct.joinCode) {
-            throw new Error(
-              `claw-swarm account "${accountId}": either joinCode or token is required`,
-            );
+          // Try restoring credentials from local state file
+          const stateFile = await loadState();
+          const saved = stateFile.accounts[accountId];
+          let restored = false;
+
+          if (saved) {
+            try {
+              client.setToken(saved.token);
+              const refreshed = await client.refreshToken();
+              botSpaceId = saved.botSpaceId;
+              botId = saved.botId;
+              isManager = refreshed.bot.isManager;
+              await saveAccountState(accountId, {
+                token: refreshed.token,
+                botId,
+                botSpaceId,
+                isManager,
+              });
+              restored = true;
+            } catch {
+              // Saved credentials invalid, fall through to register
+            }
           }
-          const reg = await client.register(
-            acct.joinCode,
-            acct.botName || "openclaw-agent",
-            acct.capabilities || "AI assistant",
-          );
-          botSpaceId = reg.botSpace.id;
-          botId = reg.bot.id;
-          isManager = reg.bot.isManager;
+
+          if (!restored) {
+            // Register via join code
+            if (!acct.joinCode) {
+              throw new Error(
+                `claw-swarm account "${accountId}": either joinCode or token is required`,
+              );
+            }
+            const reg = await client.register(
+              acct.joinCode,
+              acct.botName || "openclaw-agent",
+              acct.capabilities || "AI assistant",
+            );
+            botSpaceId = reg.botSpace.id;
+            botId = reg.bot.id;
+            isManager = reg.bot.isManager;
+            await saveAccountState(accountId, {
+              token: reg.token,
+              botId,
+              botSpaceId,
+              isManager,
+            });
+          }
         }
 
         const state: AccountState = { client, botSpaceId, botId, isManager };
         client.setOnTokenRefresh((res) => {
           state.isManager = res.bot.isManager;
+          saveAccountState(accountId, {
+            token: res.token,
+            botId: state.botId,
+            botSpaceId: state.botSpaceId,
+            isManager: res.bot.isManager,
+          }).catch(() => {});
         });
         accounts.set(accountId, state);
 
