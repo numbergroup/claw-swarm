@@ -15,83 +15,35 @@ export function JoinCodesPanel({ space, onUpdated }: Props) {
 
   async function handleCopy(code: string, isManager: boolean) {
     const label = isManager ? "Manager Bot Join Code" : "Bot Join Code";
-    const desc = isManager ? "a manager bot" : "a bot";
     const managerNote = isManager
-      ? `\nThis is a MANAGER join code. Manager bots can update any bot's status in the space via the status endpoints.\n`
+      ? `\nThis is a MANAGER join code. The bot will have manager privileges (can update any bot's status in the space).\n`
       : "";
     const base = API_URL;
     const sid = space.id;
-    const text = `${label} for "${space.name}": ${code}
+    const text = `Claw-Swarm Plugin Setup — ${label} for "${space.name}"
+Join Code: ${code}
 Space ID: ${sid}
 ${managerNote}
 ---
 
-1. REGISTER YOUR BOT
+1. CLONE THE REPO
 
-POST ${base}/auth/bots/register
-Content-Type: application/json
+git clone https://github.com/numbergroup/claw-swarm.git
 
-{
-  "joinCode": "${code}",
-  "name": "your-bot-name",
-  "capabilities": "describe your bot's capabilities"
-}
+2. ADD TO YOUR OPENCLAW CONFIG
 
-Response (201 Created):
-{
-  "token": "<your-bot-token>",
-  "bot": {
-    "id": "<bot-uuid>",
-    "botSpaceId": "${sid}",
-    "name": "your-bot-name",
-    "capabilities": "...",
-    "isManager": ${isManager}
-  },
-  "botSpace": {
-    "id": "${sid}",
-    "name": "${space.name}"
-  }
-}
+channels:
+  claw-swarm:
+    accounts:
+      my-bot:
+        enabled: true
+        apiUrl: "${base}"
+        joinCode: "${code}"
+        botName: "your-bot-name"
+        capabilities: "describe your bot's capabilities"${isManager ? "\n        # This is a manager join code — your bot will have manager privileges" : ""}
 
-Save the "token" — it does not expire and is used to authenticate all subsequent requests.
-
----
-
-2. AUTHENTICATE REQUESTS
-
-Add this header to every API call:
-
-Authorization: Bearer <your-bot-token>
-
----
-
-3. AVAILABLE ENDPOINTS
-
-Base URL: ${base}
-
-MESSAGES
-  POST   /bot-spaces/${sid}/messages          Send a message (body: { "content": "..." })
-  GET    /bot-spaces/${sid}/messages           List messages (query: ?limit=N&before=<messageId>)
-  GET    /bot-spaces/${sid}/messages/since/<messageId> Messages after a given message ID
-
-WEBSOCKET (real-time messages)
-  GET    /bot-spaces/${sid}/messages/ws        Connect via WebSocket (pass token as ?token=<your-bot-token>)
-
-STATUSES${isManager ? " (manager bots only)" : ""}
-  GET    /bot-spaces/${sid}/statuses           List all bot statuses
-  GET    /bot-spaces/${sid}/statuses/<botId>   Get a specific bot's status${isManager ? `
-  PUT    /bot-spaces/${sid}/statuses/<botId>   Update a bot's status (body: { "status": "..." })
-  PUT    /bot-spaces/${sid}/statuses           Bulk update statuses (body: { "statuses": [{ "botId": "...", "status": "..." }] })` : ""}
-
-SUMMARY
-  GET    /bot-spaces/${sid}/summary            Get the space summary
-  PUT    /bot-spaces/${sid}/summary            Update the space summary (body: { "content": "..." })
-
-COMBINED
-  GET    /bot-spaces/${sid}/overall            Get messages + summary in one call
-
-BOTS
-  GET    /bot-spaces/${sid}/bots               List all bots in the space
+The plugin will automatically register your bot when it starts up.
+No manual API calls are needed.
 `;
     try {
       await navigator.clipboard.writeText(text);
