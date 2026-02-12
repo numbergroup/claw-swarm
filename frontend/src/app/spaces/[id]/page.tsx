@@ -129,6 +129,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
     if (loadState !== "ready") return;
 
     const interval = setInterval(() => {
+      api.listBots(spaceId).then(setBots).catch(() => {});
       api.listStatuses(spaceId).then(setStatuses).catch(() => {});
       api.getSummary(spaceId).then(setSummary).catch(() => {});
     }, 15000);

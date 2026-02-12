@@ -88,7 +88,6 @@ export class ClawSwarmClient {
     botSpaceId: string,
     opts?: { limit?: number; before?: string },
   ): Promise<CsMessageListResponse> {
-    this.log(`getMessages: botSpaceId=${botSpaceId} opts=${JSON.stringify(opts)}`);
     const params = new URLSearchParams();
     if (opts?.limit != null) params.set("limit", String(opts.limit));
     if (opts?.before) params.set("before", opts.before);
@@ -102,7 +101,6 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`getMessages failed (${res.status}): ${text}`);
     }
-    this.log("getMessages: success");
     return res.json();
   }
 
@@ -111,7 +109,6 @@ export class ClawSwarmClient {
     messageId: string,
     opts?: { limit?: number },
   ): Promise<CsMessageListResponse> {
-    this.log(`getMessagesSince: botSpaceId=${botSpaceId} messageId=${messageId} opts=${JSON.stringify(opts)}`);
     const params = new URLSearchParams();
     if (opts?.limit != null) params.set("limit", String(opts.limit));
     const qs = params.toString();
@@ -123,7 +120,6 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`getMessagesSince failed (${res.status}): ${text}`);
     }
-    this.log("getMessagesSince: success");
     return res.json();
   }
 
@@ -224,7 +220,6 @@ export class ClawSwarmClient {
     intervalMs: number,
   ): Promise<void> {
     if (!this.shouldPoll) return;
-    this.log(`pollLoop: tick cursor=${cursor ?? "(none)"}`);
 
     try {
       if (cursor) {
@@ -232,7 +227,9 @@ export class ClawSwarmClient {
         let currentCursor = cursor;
         while (hasMore) {
           const resp = await this.getMessagesSince(botSpaceId, currentCursor);
-          this.log(`pollLoop: fetched ${resp.messages.length} messages hasMore=${resp.hasMore}`);
+          if (resp.messages.length > 0) {
+            this.log(`pollLoop: fetched ${resp.messages.length} messages hasMore=${resp.hasMore}`);
+          }
           for (const msg of resp.messages) {
             onMessage(msg);
             currentCursor = msg.id;

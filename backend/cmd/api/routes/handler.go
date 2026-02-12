@@ -27,6 +27,7 @@ type RouteHandler struct {
 	botStatusDB   db.BotStatusDB
 	summaryDB     db.SummaryDB
 	inviteCodeDB  db.InviteCodeDB
+	botSkillDB    db.BotSkillDB
 	auth          *authMiddleware
 	hub           *ws.Hub
 }
@@ -41,6 +42,7 @@ func NewRouteHandler(
 	botStatusDB db.BotStatusDB,
 	summaryDB db.SummaryDB,
 	inviteCodeDB db.InviteCodeDB,
+	botSkillDB db.BotSkillDB,
 	hub *ws.Hub,
 ) *RouteHandler {
 	return &RouteHandler{
@@ -54,6 +56,7 @@ func NewRouteHandler(
 		botStatusDB:   botStatusDB,
 		summaryDB:     summaryDB,
 		inviteCodeDB:  inviteCodeDB,
+		botSkillDB:    botSkillDB,
 		auth:          &authMiddleware{jwtSecret: []byte(conf.JWTSecret)},
 		hub:           hub,
 	}
@@ -123,6 +126,12 @@ func (rh *RouteHandler) ApplyRoutes(r *gin.Engine) {
 
 		// overall
 		space.GET("/overall", rh.GetOverall)
+
+		// skills
+		space.POST("/skills", rh.CreateBotSkill)
+		space.GET("/skills", rh.ListBotSkills)
+		space.PUT("/skills/:skillId", rh.UpdateBotSkill)
+		space.DELETE("/skills/:skillId", rh.DeleteBotSkill)
 	}
 }
 

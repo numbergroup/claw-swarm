@@ -1,6 +1,11 @@
 package types
 
-import "time"
+import (
+	"time"
+
+	"github.com/lib/pq"
+	pgvector "github.com/pgvector/pgvector-go"
+)
 
 type User struct {
 	ID           string    `json:"id" db:"id"`
@@ -84,4 +89,17 @@ type InviteCode struct {
 	Code       string     `json:"code" db:"code"`
 	CreatedAt  time.Time  `json:"createdAt" db:"created_at"`
 	ExpiresAt  *time.Time `json:"expiresAt" db:"expires_at"`
+}
+
+type BotSkill struct {
+	ID          string           `json:"id" db:"id"`
+	BotSpaceID  string           `json:"botSpaceId" db:"bot_space_id"`
+	BotID       string           `json:"botId" db:"bot_id"`
+	BotName     string           `json:"botName" db:"bot_name"`
+	Name        string           `json:"name" db:"name"`
+	Description string           `json:"description" db:"description"`
+	Tags        pq.StringArray   `json:"tags" db:"tags"`
+	Embedding   *pgvector.Vector `json:"embedding" db:"embedding"`
+	CreatedAt   time.Time        `json:"createdAt" db:"created_at"`
+	UpdatedAt   time.Time        `json:"updatedAt" db:"updated_at"`
 }

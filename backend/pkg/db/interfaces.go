@@ -67,3 +67,11 @@ type InviteCodeDB interface {
 	ListByBotSpaceID(ctx context.Context, botSpaceID string) ([]types.InviteCode, error)
 	Delete(ctx context.Context, id string) error
 }
+
+type BotSkillDB interface {
+	Insert(ctx context.Context, skill types.BotSkill) (types.BotSkill, error)
+	GetByID(ctx context.Context, id string) (types.BotSkill, error)
+	ListByBotSpaceID(ctx context.Context, botSpaceID string) ([]types.BotSkill, error)
+	Update(ctx context.Context, skill types.BotSkill) (types.BotSkill, error)
+	Delete(ctx context.Context, id string) error
+}

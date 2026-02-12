@@ -66,6 +66,11 @@ func main() {
 		log.WithError(err).Fatal("failed to create invite code db")
 	}
 
+	botSkillDB, err := db.NewBotSkillDB(ctx, conf, sdb)
+	if err != nil {
+		log.WithError(err).Fatal("failed to create bot skill db")
+	}
+
 	hub := ws.NewHub(log)
 
 	rh := routes.NewRouteHandler(
@@ -78,6 +83,7 @@ func main() {
 		botStatusDB,
 		summaryDB,
 		inviteCodeDB,
+		botSkillDB,
 		hub,
 	)
 

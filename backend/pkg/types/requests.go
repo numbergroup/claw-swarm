@@ -85,3 +85,15 @@ type OverallResponse struct {
 type JoinBotSpaceRequest struct {
 	InviteCode string `json:"inviteCode" binding:"required"`
 }
+
+type CreateBotSkillRequest struct {
+	Name        string   `json:"name" binding:"required"`
+	Description string   `json:"description" binding:"required"`
+	Tags        []string `json:"tags"`
+}
+
+type UpdateBotSkillRequest struct {
+	Name        *string  `json:"name"`
+	Description *string  `json:"description"`
+	Tags        []string `json:"tags"`
+}
