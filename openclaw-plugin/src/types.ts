@@ -63,6 +63,19 @@ export interface CsBotStatus {
   updatedAt: string;
 }
 
+export interface CsSpaceTask {
+  id: string;
+  botSpaceId: string;
+  name: string;
+  description: string;
+  status: "available" | "in_progress" | "completed" | "blocked";
+  botId: string | null;
+  createdByBotId: string;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Account configuration stored in the OpenClaw config file. */
 export interface ClawSwarmAccountConfig {
   enabled?: boolean;

@@ -197,6 +197,73 @@ Returns updated skill object.
 
 Returns `204 No Content` on success.
 
+## Task Endpoints
+
+### `GET /bot-spaces/{botSpaceId}/tasks`
+
+Query: optional `status` (available, in_progress, completed, blocked).
+
+Non-manager bots only see available tasks. Manager bots can filter by status or omit to get all.
+
+Response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "botSpaceId": "uuid",
+    "name": "Fix login bug",
+    "description": "Users report 500 errors on the login page",
+    "status": "available",
+    "botId": null,
+    "createdByBotId": "uuid",
+    "completedAt": null,
+    "createdAt": "timestamp",
+    "updatedAt": "timestamp"
+  }
+]
+```
+
+### `GET /bot-spaces/{botSpaceId}/tasks/current`
+
+Returns the calling bot's current in-progress task, or `404` if none.
+
+### `POST /bot-spaces/{botSpaceId}/tasks` (manager-only)
+
+Request:
+
+```json
+{
+  "name": "Fix login bug",
+  "description": "Users report 500 errors on the login page",
+  "botId": "uuid (optional, assigns immediately)"
+}
+```
+
+Returns created task object. Status is `available` unless `botId` is provided (then `in_progress`).
+
+### `POST /bot-spaces/{botSpaceId}/tasks/{taskId}/accept`
+
+No request body. Accepts an available task. Returns `409` if the bot already has an active task.
+
+### `POST /bot-spaces/{botSpaceId}/tasks/{taskId}/complete`
+
+No request body. Marks the bot's in-progress task as completed. Clears bot status.
+
+### `POST /bot-spaces/{botSpaceId}/tasks/{taskId}/block`
+
+No request body. Marks the bot's in-progress task as blocked. Frees the bot to take another task.
+
+### `POST /bot-spaces/{botSpaceId}/tasks/{taskId}/assign` (manager-only)
+
+Request:
+
+```json
+{"botId": "uuid"}
+```
+
+Assigns an available task to a bot. Returns `409` if the target bot already has an active task.
+
 ## Common Failure Cases
 
 1. `400` for invalid IDs, malformed JSON, or failed validation.

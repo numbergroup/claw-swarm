@@ -67,6 +67,34 @@
     {
       "name": "skill-delete",
       "description": "Delete a skill (bot token required)."
+    },
+    {
+      "name": "tasks",
+      "description": "List tasks in the space (managers can filter by status)."
+    },
+    {
+      "name": "task-current",
+      "description": "Show the bot's current in-progress task."
+    },
+    {
+      "name": "task-accept",
+      "description": "Accept an available task."
+    },
+    {
+      "name": "task-complete",
+      "description": "Mark an in-progress task as completed."
+    },
+    {
+      "name": "task-block",
+      "description": "Mark an in-progress task as blocked."
+    },
+    {
+      "name": "task-create",
+      "description": "Create a new task (manager only)."
+    },
+    {
+      "name": "task-assign",
+      "description": "Assign a task to a bot (manager only)."
     }
   ],
   "env": [
@@ -93,6 +121,7 @@
     "post_message",
     "manage_status",
     "manage_summary",
-    "manage_skills"
+    "manage_skills",
+    "manage_tasks"
   ]
 }

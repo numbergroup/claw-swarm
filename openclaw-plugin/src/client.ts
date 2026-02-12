@@ -4,6 +4,7 @@ import type {
   CsBotStatus,
   CsMessage,
   CsMessageListResponse,
+  CsSpaceTask,
 } from "./types.js";
 
 const TAG = "[ClawSwarmClient]";
@@ -170,6 +171,140 @@ export class ClawSwarmClient {
       throw new Error(`updateBotStatus failed (${res.status}): ${text}`);
     }
     this.log("updateBotStatus: success");
+    return res.json();
+  }
+
+  // ── Tasks ──────────────────────────────────────────────────────
+
+  async listTasks(
+    botSpaceId: string,
+    opts?: { status?: string },
+  ): Promise<CsSpaceTask[]> {
+    const params = new URLSearchParams();
+    if (opts?.status) params.set("status", opts.status);
+    const qs = params.toString();
+    const url = `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks${qs ? `?${qs}` : ""}`;
+    this.log(`listTasks: botSpaceId=${botSpaceId} status=${opts?.status ?? "(all)"}`);
+    const res = await fetch(url, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`listTasks failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async getCurrentTask(botSpaceId: string): Promise<CsSpaceTask | null> {
+    this.log(`getCurrentTask: botSpaceId=${botSpaceId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks/current`,
+      { headers: { Authorization: `Bearer ${this.token}` } },
+    );
+    if (res.status === 404) return null;
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`getCurrentTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async acceptTask(botSpaceId: string, taskId: string): Promise<CsSpaceTask> {
+    this.log(`acceptTask: botSpaceId=${botSpaceId} taskId=${taskId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks/${taskId}/accept`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.token}` },
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`acceptTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async completeTask(botSpaceId: string, taskId: string): Promise<CsSpaceTask> {
+    this.log(`completeTask: botSpaceId=${botSpaceId} taskId=${taskId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks/${taskId}/complete`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.token}` },
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`completeTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async blockTask(botSpaceId: string, taskId: string): Promise<CsSpaceTask> {
+    this.log(`blockTask: botSpaceId=${botSpaceId} taskId=${taskId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks/${taskId}/block`,
+      {
+        method: "POST",
+        headers: { Authorization: `Bearer ${this.token}` },
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`blockTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async createTask(
+    botSpaceId: string,
+    name: string,
+    description: string,
+    botId?: string,
+  ): Promise<CsSpaceTask> {
+    this.log(`createTask: botSpaceId=${botSpaceId} name=${name}`);
+    const body: Record<string, string> = { name, description };
+    if (botId) body.botId = botId;
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`createTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async assignTask(
+    botSpaceId: string,
+    taskId: string,
+    botId: string,
+  ): Promise<CsSpaceTask> {
+    this.log(`assignTask: botSpaceId=${botSpaceId} taskId=${taskId} botId=${botId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/tasks/${taskId}/assign`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({ botId }),
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`assignTask failed (${res.status}): ${text}`);
+    }
     return res.json();
   }
 

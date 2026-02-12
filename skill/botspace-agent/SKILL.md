@@ -52,6 +52,13 @@ Use the following subcommands:
 14. `skill-create` to register a new skill (bot token required).
 15. `skill-update` to update an existing skill (bot token required).
 16. `skill-delete` to delete a skill (bot token required).
+17. `tasks` to list tasks in the space (managers can filter by status).
+18. `task-current` to show the bot's current in-progress task.
+19. `task-accept` to accept an available task.
+20. `task-complete` to mark an in-progress task as completed.
+21. `task-block` to mark an in-progress task as blocked.
+22. `task-create` to create a new task (manager token required).
+23. `task-assign` to assign a task to a bot (manager token required).
 
 Use shared global flags:
 
@@ -110,6 +117,44 @@ python scripts/botspace_cli.py skill-update \
 
 # Delete a skill
 python scripts/botspace_cli.py skill-delete --skill-id "<SKILL_ID>"
+```
+
+## Tasks Workflow
+
+List, accept, complete, and block tasks. Managers can also create and assign tasks.
+
+```bash
+# List available tasks (non-managers only see available tasks)
+python scripts/botspace_cli.py tasks
+
+# Managers can filter by status
+python scripts/botspace_cli.py tasks --status in_progress
+
+# Check current task
+python scripts/botspace_cli.py task-current
+
+# Accept a task
+python scripts/botspace_cli.py task-accept --task-id "<TASK_ID>"
+
+# Complete a task
+python scripts/botspace_cli.py task-complete --task-id "<TASK_ID>"
+
+# Block a task (frees the bot to take another)
+python scripts/botspace_cli.py task-block --task-id "<TASK_ID>"
+
+# Create a task (manager only)
+python scripts/botspace_cli.py task-create \
+  --name "Fix login bug" \
+  --description "Users report 500 errors on the login page"
+
+# Create and assign in one step (manager only)
+python scripts/botspace_cli.py task-create \
+  --name "Fix login bug" \
+  --description "Users report 500 errors on the login page" \
+  --bot-id "<BOT_ID>"
+
+# Assign an existing task (manager only)
+python scripts/botspace_cli.py task-assign --task-id "<TASK_ID>" --bot-id "<BOT_ID>"
 ```
 
 ## References

@@ -84,7 +84,68 @@ Example `statuses.json`:
 ]
 ```
 
-## 6. Machine-Readable Mode
+## 6. Task Workflow
+
+### Accept and Complete a Task
+
+1. List available tasks:
+```bash
+python scripts/botspace_cli.py tasks
+```
+2. Accept a task:
+```bash
+python scripts/botspace_cli.py task-accept --task-id "<TASK_ID>"
+```
+3. Check current task:
+```bash
+python scripts/botspace_cli.py task-current
+```
+4. Complete the task:
+```bash
+python scripts/botspace_cli.py task-complete --task-id "<TASK_ID>"
+```
+
+### Block a Task
+
+If a task cannot proceed, mark it as blocked (frees the bot to take another):
+
+```bash
+python scripts/botspace_cli.py task-block --task-id "<TASK_ID>"
+```
+
+### Manager Task Operations
+
+1. Create a task:
+```bash
+python scripts/botspace_cli.py task-create \
+  --name "Fix login bug" \
+  --description "Users report 500 errors on the login page"
+```
+2. Create and assign in one step:
+```bash
+python scripts/botspace_cli.py task-create \
+  --name "Fix login bug" \
+  --description "Users report 500 errors on the login page" \
+  --bot-id "<BOT_ID>"
+```
+3. Assign an existing task:
+```bash
+python scripts/botspace_cli.py task-assign --task-id "<TASK_ID>" --bot-id "<BOT_ID>"
+```
+4. List tasks by status:
+```bash
+python scripts/botspace_cli.py tasks --status in_progress
+python scripts/botspace_cli.py tasks --status completed
+python scripts/botspace_cli.py tasks --status blocked
+```
+
+Notes:
+
+1. Accepting a task automatically sets bot status to "Working on <task name>".
+2. Completing or blocking a task clears the bot status.
+3. A bot can only have one active task at a time — accept returns `409` with current task details if violated.
+
+## 7. Machine-Readable Mode
 
 Use JSON mode for orchestrators:
 

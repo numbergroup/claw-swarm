@@ -712,6 +712,168 @@ def cmd_skill_update(args: argparse.Namespace, state: dict[str, Any], api_url: s
     return 0
 
 
+def format_task(task: dict[str, Any]) -> str:
+    status = task.get("status", "unknown")
+    name = task.get("name", "unnamed")
+    bot_id = task.get("botId") or "unassigned"
+    return f"{task.get('id')} name={name} status={status} bot={bot_id}"
+
+
+def cmd_tasks(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    query: dict[str, Any] = {}
+    if args.status:
+        query["status"] = args.status
+    resp = request_json(
+        api_url,
+        "GET",
+        f"/bot-spaces/{space_id}/tasks",
+        token=token,
+        query=query if query else None,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, list):
+        for item in resp:
+            if isinstance(item, dict):
+                print(format_task(item))
+    else:
+        print("no tasks returned")
+    return 0
+
+
+def cmd_task_current(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(
+        api_url,
+        "GET",
+        f"/bot-spaces/{space_id}/tasks/current",
+        token=token,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(format_task(resp))
+        print(f"description: {resp.get('description', '')}")
+    else:
+        print("no active task")
+    return 0
+
+
+def cmd_task_accept(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/tasks/{args.task_id}/accept",
+        token=token,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"accepted task: {resp.get('name')}")
+    else:
+        print("task accepted")
+    return 0
+
+
+def cmd_task_complete(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/tasks/{args.task_id}/complete",
+        token=token,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"completed task: {resp.get('name')}")
+    else:
+        print("task completed")
+    return 0
+
+
+def cmd_task_block(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/tasks/{args.task_id}/block",
+        token=token,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"blocked task: {resp.get('name')}")
+    else:
+        print("task blocked")
+    return 0
+
+
+def cmd_task_create(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    body: dict[str, Any] = {
+        "name": args.name,
+        "description": args.description,
+    }
+    if args.bot_id:
+        body["botId"] = args.bot_id
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/tasks",
+        token=token,
+        body=body,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"created task id={resp.get('id')} name={resp.get('name')} status={resp.get('status')}")
+    else:
+        print("task created")
+    return 0
+
+
+def cmd_task_assign(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/tasks/{args.task_id}/assign",
+        token=token,
+        body={"botId": args.bot_id},
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"assigned task '{resp.get('name')}' to bot {resp.get('botId')}")
+    else:
+        print("task assigned")
+    return 0
+
+
 def cmd_skill_delete(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
     token = resolve_token(args, state)
     space_id = resolve_space_id(args, state)
@@ -819,6 +981,36 @@ def build_parser() -> argparse.ArgumentParser:
     add_space_flag(skill_delete)
     skill_delete.add_argument("--skill-id", required=True, help="Skill ID")
 
+    tasks = subparsers.add_parser("tasks", help="List tasks in the space")
+    add_space_flag(tasks)
+    tasks.add_argument("--status", help="Filter by status (available, in_progress, completed, blocked)")
+
+    task_current = subparsers.add_parser("task-current", help="Show current in-progress task")
+    add_space_flag(task_current)
+
+    task_accept = subparsers.add_parser("task-accept", help="Accept an available task")
+    add_space_flag(task_accept)
+    task_accept.add_argument("--task-id", required=True, help="Task ID")
+
+    task_complete = subparsers.add_parser("task-complete", help="Mark a task as completed")
+    add_space_flag(task_complete)
+    task_complete.add_argument("--task-id", required=True, help="Task ID")
+
+    task_block = subparsers.add_parser("task-block", help="Mark a task as blocked")
+    add_space_flag(task_block)
+    task_block.add_argument("--task-id", required=True, help="Task ID")
+
+    task_create = subparsers.add_parser("task-create", help="Create a new task (manager only)")
+    add_space_flag(task_create)
+    task_create.add_argument("--name", required=True, help="Task name")
+    task_create.add_argument("--description", required=True, help="Task description")
+    task_create.add_argument("--bot-id", help="Optionally assign to a bot immediately")
+
+    task_assign = subparsers.add_parser("task-assign", help="Assign a task to a bot (manager only)")
+    add_space_flag(task_assign)
+    task_assign.add_argument("--task-id", required=True, help="Task ID")
+    task_assign.add_argument("--bot-id", required=True, help="Bot ID to assign to")
+
     return parser
 
 
@@ -856,6 +1048,20 @@ def run_command(args: argparse.Namespace, state: dict[str, Any], api_url: str) -
         return cmd_skill_update(args, state, api_url)
     if command == "skill-delete":
         return cmd_skill_delete(args, state, api_url)
+    if command == "tasks":
+        return cmd_tasks(args, state, api_url)
+    if command == "task-current":
+        return cmd_task_current(args, state, api_url)
+    if command == "task-accept":
+        return cmd_task_accept(args, state, api_url)
+    if command == "task-complete":
+        return cmd_task_complete(args, state, api_url)
+    if command == "task-block":
+        return cmd_task_block(args, state, api_url)
+    if command == "task-create":
+        return cmd_task_create(args, state, api_url)
+    if command == "task-assign":
+        return cmd_task_assign(args, state, api_url)
     fail(f"unknown command: {command}")
     return 1
 
