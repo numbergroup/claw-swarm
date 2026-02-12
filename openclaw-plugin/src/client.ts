@@ -7,14 +7,18 @@ import type {
 
 const TAG = "[ClawSwarmClient]";
 
+type Logger = (msg: string) => void;
+
 export class ClawSwarmClient {
   private apiUrl: string;
   private token: string | null = null;
   private pollTimer: ReturnType<typeof setTimeout> | null = null;
   private shouldPoll = false;
+  private log: Logger;
 
-  constructor(apiUrl: string) {
+  constructor(apiUrl: string, log?: Logger) {
     this.apiUrl = apiUrl.replace(/\/+$/, "");
+    this.log = log ?? ((msg: string) => console.log(`${TAG} ${msg}`));
   }
 
   // ── Auth ──────────────────────────────────────────────────────────
@@ -24,7 +28,7 @@ export class ClawSwarmClient {
   }
 
   async refreshToken(): Promise<CsBotRegistrationResponse> {
-    console.debug(TAG, "refreshToken: refreshing bot token");
+    this.log("refreshToken: refreshing bot token");
     const res = await fetch(`${this.apiUrl}/auth/bots/refresh`, {
       method: "POST",
       headers: {
@@ -37,14 +41,14 @@ export class ClawSwarmClient {
     }
     const data: CsBotRegistrationResponse = await res.json();
     this.token = data.token;
-    console.debug(TAG, "refreshToken: token refreshed successfully");
+    this.log("refreshToken: token refreshed successfully");
     return data;
   }
 
   // ── Messages ──────────────────────────────────────────────────────
 
   async sendMessage(botSpaceId: string, content: string): Promise<CsMessage> {
-    console.debug(TAG, "sendMessage: botSpaceId=%s contentLength=%d", botSpaceId, content.length);
+    this.log(`sendMessage: botSpaceId=${botSpaceId} contentLength=${content.length}`);
     const res = await fetch(
       `${this.apiUrl}/bot-spaces/${botSpaceId}/messages`,
       {
@@ -60,7 +64,7 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`sendMessage failed (${res.status}): ${text}`);
     }
-    console.debug(TAG, "sendMessage: success");
+    this.log("sendMessage: success");
     return res.json();
   }
 
@@ -68,7 +72,7 @@ export class ClawSwarmClient {
     botSpaceId: string,
     opts?: { limit?: number; before?: string },
   ): Promise<CsMessageListResponse> {
-    console.debug(TAG, "getMessages: botSpaceId=%s opts=%o", botSpaceId, opts);
+    this.log(`getMessages: botSpaceId=${botSpaceId} opts=${JSON.stringify(opts)}`);
     const params = new URLSearchParams();
     if (opts?.limit != null) params.set("limit", String(opts.limit));
     if (opts?.before) params.set("before", opts.before);
@@ -82,7 +86,7 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`getMessages failed (${res.status}): ${text}`);
     }
-    console.debug(TAG, "getMessages: success");
+    this.log("getMessages: success");
     return res.json();
   }
 
@@ -91,7 +95,7 @@ export class ClawSwarmClient {
     messageId: string,
     opts?: { limit?: number },
   ): Promise<CsMessageListResponse> {
-    console.debug(TAG, "getMessagesSince: botSpaceId=%s messageId=%s opts=%o", botSpaceId, messageId, opts);
+    this.log(`getMessagesSince: botSpaceId=${botSpaceId} messageId=${messageId} opts=${JSON.stringify(opts)}`);
     const params = new URLSearchParams();
     if (opts?.limit != null) params.set("limit", String(opts.limit));
     const qs = params.toString();
@@ -103,7 +107,7 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`getMessagesSince failed (${res.status}): ${text}`);
     }
-    console.debug(TAG, "getMessagesSince: success");
+    this.log("getMessagesSince: success");
     return res.json();
   }
 
@@ -114,7 +118,7 @@ export class ClawSwarmClient {
     botId: string,
     status: string,
   ): Promise<CsBotStatus> {
-    console.debug(TAG, "updateBotStatus: botSpaceId=%s botId=%s status=%s", botSpaceId, botId, status);
+    this.log(`updateBotStatus: botSpaceId=${botSpaceId} botId=${botId} status=${status}`);
     const res = await fetch(
       `${this.apiUrl}/bot-spaces/${botSpaceId}/statuses/${botId}`,
       {
@@ -128,7 +132,7 @@ export class ClawSwarmClient {
     );
 
     if (res.status === 401 || res.status === 403) {
-      console.debug(TAG, "updateBotStatus: got %d, refreshing token and retrying", res.status);
+      this.log(`updateBotStatus: got ${res.status}, refreshing token and retrying`);
       await this.refreshToken();
       const retry = await fetch(
         `${this.apiUrl}/bot-spaces/${botSpaceId}/statuses/${botId}`,
@@ -145,7 +149,7 @@ export class ClawSwarmClient {
         const text = await retry.text();
         throw new Error(`updateBotStatus failed (${retry.status}): ${text}`);
       }
-      console.debug(TAG, "updateBotStatus: retry success");
+      this.log("updateBotStatus: retry success");
       return retry.json();
     }
 
@@ -153,7 +157,7 @@ export class ClawSwarmClient {
       const text = await res.text();
       throw new Error(`updateBotStatus failed (${res.status}): ${text}`);
     }
-    console.debug(TAG, "updateBotStatus: success");
+    this.log("updateBotStatus: success");
     return res.json();
   }
 
@@ -165,13 +169,13 @@ export class ClawSwarmClient {
     opts?: { intervalMs?: number },
   ): void {
     const intervalMs = opts?.intervalMs ?? 5000;
-    console.debug(TAG, "startPolling: botSpaceId=%s intervalMs=%d", botSpaceId, intervalMs);
+    this.log(`startPolling: botSpaceId=${botSpaceId} intervalMs=${intervalMs}`);
     this.shouldPoll = true;
     this.initPolling(botSpaceId, onMessage, intervalMs);
   }
 
   stopPolling(): void {
-    console.debug(TAG, "stopPolling");
+    this.log("stopPolling");
     this.shouldPoll = false;
     if (this.pollTimer) {
       clearTimeout(this.pollTimer);
@@ -191,9 +195,9 @@ export class ClawSwarmClient {
         cursor = messages[0].id;
       }
     } catch {
-      console.debug(TAG, "initPolling: failed to seed cursor, starting from beginning");
+      this.log("initPolling: failed to seed cursor, starting from beginning");
     }
-    console.debug(TAG, "initPolling: cursor=%s", cursor ?? "(none)");
+    this.log(`initPolling: cursor=${cursor ?? "(none)"}`);
     this.pollLoop(botSpaceId, cursor, onMessage, intervalMs);
   }
 
@@ -204,7 +208,7 @@ export class ClawSwarmClient {
     intervalMs: number,
   ): Promise<void> {
     if (!this.shouldPoll) return;
-    console.debug(TAG, "pollLoop: tick cursor=%s", cursor ?? "(none)");
+    this.log(`pollLoop: tick cursor=${cursor ?? "(none)"}`);
 
     try {
       if (cursor) {
@@ -212,7 +216,7 @@ export class ClawSwarmClient {
         let currentCursor = cursor;
         while (hasMore) {
           const resp = await this.getMessagesSince(botSpaceId, currentCursor);
-          console.debug(TAG, "pollLoop: fetched %d messages hasMore=%s", resp.messages.length, resp.hasMore);
+          this.log(`pollLoop: fetched ${resp.messages.length} messages hasMore=${resp.hasMore}`);
           for (const msg of resp.messages) {
             onMessage(msg);
             currentCursor = msg.id;
@@ -225,11 +229,11 @@ export class ClawSwarmClient {
         const { messages } = await this.getMessages(botSpaceId, { limit: 1 });
         if (messages.length > 0) {
           cursor = messages[0].id;
-          console.debug(TAG, "pollLoop: seeded cursor=%s", cursor);
+          this.log(`pollLoop: seeded cursor=${cursor}`);
         }
       }
     } catch (err) {
-      console.debug(TAG, "pollLoop: error %s", err);
+      this.log(`pollLoop: error ${err}`);
       // Swallow errors and retry on next interval
     }
 

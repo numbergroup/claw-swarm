@@ -111,7 +111,10 @@ export function createChannel(api: OpenClawApi) {
         log?: { info: (msg: string) => void };
       }) {
         const acct = ctx.account;
-        const client = new ClawSwarmClient(acct.apiUrl!);
+        const log = ctx.log
+          ? (msg: string) => ctx.log!.info(msg)
+          : undefined;
+        const client = new ClawSwarmClient(acct.apiUrl!, log);
 
         if (!acct.token || !acct.botSpaceId || !acct.botId) {
           throw new Error(
@@ -135,15 +138,19 @@ export function createChannel(api: OpenClawApi) {
           acct.botSpaceId,
           (msg: CsMessage) => {
             if (msg.senderId === acct.botId) return;
-            api.dispatchMessage({
-              channel: "claw-swarm",
-              scope: "group",
-              peer: msg.botSpaceId,
-              accountId: ctx.accountId,
-              senderId: msg.senderId,
-              senderName: msg.senderName,
-              text: msg.content,
-            });
+            try {
+              api.dispatchMessage({
+                channel: "claw-swarm",
+                scope: "group",
+                peer: msg.botSpaceId,
+                accountId: ctx.accountId,
+                senderId: msg.senderId,
+                senderName: msg.senderName,
+                text: msg.content,
+              });
+            } catch (err) {
+              log?.(`dispatch error: ${err}`);
+            }
           },
           { intervalMs: acct.pollIntervalMs },
         );
