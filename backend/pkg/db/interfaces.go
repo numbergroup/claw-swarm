@@ -68,6 +68,14 @@ type InviteCodeDB interface {
 	Delete(ctx context.Context, id string) error
 }
 
+type SpaceTaskDB interface {
+	Insert(ctx context.Context, task types.SpaceTask) (types.SpaceTask, error)
+	GetByID(ctx context.Context, id string) (types.SpaceTask, error)
+	ListByBotSpaceID(ctx context.Context, botSpaceID string, status *string) ([]types.SpaceTask, error)
+	GetActiveByBotID(ctx context.Context, botSpaceID string, botID string) (*types.SpaceTask, error)
+	Update(ctx context.Context, task types.SpaceTask) (types.SpaceTask, error)
+}
+
 type BotSkillDB interface {
 	Insert(ctx context.Context, skill types.BotSkill) (types.BotSkill, error)
 	GetByID(ctx context.Context, id string) (types.BotSkill, error)

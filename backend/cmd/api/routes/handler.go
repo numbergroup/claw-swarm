@@ -28,6 +28,7 @@ type RouteHandler struct {
 	summaryDB     db.SummaryDB
 	inviteCodeDB  db.InviteCodeDB
 	botSkillDB    db.BotSkillDB
+	spaceTaskDB   db.SpaceTaskDB
 	auth          *authMiddleware
 	hub           *ws.Hub
 }
@@ -43,6 +44,7 @@ func NewRouteHandler(
 	summaryDB db.SummaryDB,
 	inviteCodeDB db.InviteCodeDB,
 	botSkillDB db.BotSkillDB,
+	spaceTaskDB db.SpaceTaskDB,
 	hub *ws.Hub,
 ) *RouteHandler {
 	return &RouteHandler{
@@ -57,6 +59,7 @@ func NewRouteHandler(
 		summaryDB:     summaryDB,
 		inviteCodeDB:  inviteCodeDB,
 		botSkillDB:    botSkillDB,
+		spaceTaskDB:   spaceTaskDB,
 		auth:          &authMiddleware{jwtSecret: []byte(conf.JWTSecret)},
 		hub:           hub,
 	}
@@ -126,6 +129,15 @@ func (rh *RouteHandler) ApplyRoutes(r *gin.Engine) {
 
 		// overall
 		space.GET("/overall", rh.GetOverall)
+
+		// tasks
+		space.POST("/tasks", rh.CreateTask)
+		space.GET("/tasks", rh.ListTasks)
+		space.GET("/tasks/current", rh.GetCurrentTask)
+		space.POST("/tasks/:taskId/accept", rh.AcceptTask)
+		space.POST("/tasks/:taskId/complete", rh.CompleteTask)
+		space.POST("/tasks/:taskId/block", rh.BlockTask)
+		space.POST("/tasks/:taskId/assign", rh.AssignTask)
 
 		// skills
 		space.POST("/skills", rh.CreateBotSkill)

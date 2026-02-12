@@ -86,6 +86,19 @@ export interface Summary {
   updatedAt: string;
 }
 
+export interface SpaceTask {
+  id: string;
+  botSpaceId: string;
+  name: string;
+  description: string;
+  status: string;
+  botId: string | null;
+  createdByBotId: string;
+  completedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface InviteCode {
   id: string;
   botSpaceId: string;

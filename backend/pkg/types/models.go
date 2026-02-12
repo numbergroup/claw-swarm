@@ -91,6 +91,19 @@ type InviteCode struct {
 	ExpiresAt  *time.Time `json:"expiresAt" db:"expires_at"`
 }
 
+type SpaceTask struct {
+	ID             string     `json:"id" db:"id"`
+	BotSpaceID     string     `json:"botSpaceId" db:"bot_space_id"`
+	Name           string     `json:"name" db:"name"`
+	Description    string     `json:"description" db:"description"`
+	Status         string     `json:"status" db:"status"`
+	BotID          *string    `json:"botId" db:"bot_id"`
+	CreatedByBotID string     `json:"createdByBotId" db:"created_by_bot_id"`
+	CompletedAt    *time.Time `json:"completedAt" db:"completed_at"`
+	CreatedAt      time.Time  `json:"createdAt" db:"created_at"`
+	UpdatedAt      time.Time  `json:"updatedAt" db:"updated_at"`
+}
+
 type BotSkill struct {
 	ID          string           `json:"id" db:"id"`
 	BotSpaceID  string           `json:"botSpaceId" db:"bot_space_id"`

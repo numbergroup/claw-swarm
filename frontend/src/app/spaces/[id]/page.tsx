@@ -12,6 +12,7 @@ import type {
   BotSkill,
   BotStatus,
   Message,
+  SpaceTask,
   Summary,
   SpaceMemberWithUser,
   InviteCode,
@@ -25,6 +26,7 @@ import { JoinCodesPanel } from "@/components/space/join-codes-panel";
 import { InviteCodesPanel } from "@/components/space/invite-codes-panel";
 import { SpaceHeader } from "@/components/space/space-header";
 import { SkillsPanel } from "@/components/space/skills-panel";
+import { TasksPanel } from "@/components/space/tasks-panel";
 
 type LoadState = "loading" | "ready" | "forbidden" | "notFound" | "error";
 
@@ -63,8 +65,9 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"messages" | "skills">("messages");
+  const [activeTab, setActiveTab] = useState<"messages" | "skills" | "tasks">("messages");
   const [skills, setSkills] = useState<BotSkill[]>([]);
+  const [tasks, setTasks] = useState<SpaceTask[]>([]);
 
   const latestMessageIdRef = useRef<string | null>(null);
   const syncingSinceReconnectRef = useRef(false);
@@ -106,6 +109,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       api.listStatuses(spaceId).then(setStatuses).catch(() => {});
       api.getSummary(spaceId).then(setSummary).catch(() => {});
       api.listSkills(spaceId).then(setSkills).catch(() => {});
+      api.listTasks(spaceId).then(setTasks).catch(() => {});
 
       if (spaceData.ownerId === user?.id) {
         api.listInviteCodes(spaceId).then(setInviteCodes).catch(() => {});
@@ -138,6 +142,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       api.listStatuses(spaceId).then(setStatuses).catch(() => {});
       api.getSummary(spaceId).then(setSummary).catch(() => {});
       api.listSkills(spaceId).then(setSkills).catch(() => {});
+      api.listTasks(spaceId).then(setTasks).catch(() => {});
     }, 15000);
 
     return () => clearInterval(interval);
@@ -315,6 +320,16 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
             >
               Skills
             </button>
+            <button
+              onClick={() => setActiveTab("tasks")}
+              className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "tasks"
+                  ? "text-blue-400 border-blue-400"
+                  : "text-zinc-400 border-transparent hover:text-zinc-200"
+              }`}
+            >
+              Tasks
+            </button>
           </div>
           <div className="flex-1 min-h-0">
             <div className={activeTab !== "messages" ? "hidden" : "h-full"}>
@@ -329,6 +344,9 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
             </div>
             <div className={activeTab !== "skills" ? "hidden" : "h-full"}>
               <SkillsPanel skills={skills} />
+            </div>
+            <div className={activeTab !== "tasks" ? "hidden" : "h-full"}>
+              <TasksPanel tasks={tasks} bots={bots} />
             </div>
           </div>
         </div>

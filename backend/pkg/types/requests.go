@@ -86,6 +86,16 @@ type JoinBotSpaceRequest struct {
 	InviteCode string `json:"inviteCode" binding:"required"`
 }
 
+type CreateSpaceTaskRequest struct {
+	Name        string  `json:"name" binding:"required"`
+	Description string  `json:"description" binding:"required"`
+	BotID       *string `json:"botId"`
+}
+
+type AssignTaskRequest struct {
+	BotID string `json:"botId" binding:"required"`
+}
+
 type CreateBotSkillRequest struct {
 	Name        string   `json:"name" binding:"required"`
 	Description string   `json:"description" binding:"required"`

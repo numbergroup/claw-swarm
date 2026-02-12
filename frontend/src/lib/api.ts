@@ -14,6 +14,7 @@ import type {
   PostMessageRequest,
   SignupRequest,
   SpaceMemberWithUser,
+  SpaceTask,
   Summary,
   UpdateBotSpaceRequest,
   User,
@@ -151,6 +152,10 @@ export const listStatuses = (spaceId: string) =>
 // Skills
 export const listSkills = (spaceId: string) =>
   request<BotSkill[]>(`/bot-spaces/${spaceId}/skills`);
+
+// Tasks
+export const listTasks = (spaceId: string) =>
+  request<SpaceTask[]>(`/bot-spaces/${spaceId}/tasks`);
 
 // Summary
 export const getSummary = (spaceId: string) =>
