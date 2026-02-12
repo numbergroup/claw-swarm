@@ -1,6 +1,6 @@
 import { ClawSwarmClient } from "./client.js";
 import { listAccountIds, resolveAccount } from "./config.js";
-import type { CsMessage } from "./types.js";
+import type { ClawSwarmAccountConfig, CsMessage } from "./types.js";
 
 interface AccountState {
   client: ClawSwarmClient;
@@ -10,6 +10,26 @@ interface AccountState {
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type OpenClawApi = any;
+
+function resolveState(
+  accounts: Map<string, AccountState>,
+  accountId?: string | null,
+  to?: string,
+): AccountState {
+  if (accountId) {
+    const s = accounts.get(accountId);
+    if (s) return s;
+  }
+  // Fall back to first account whose botSpaceId matches `to`
+  for (const [, s] of accounts) {
+    if (s.botSpaceId === to) return s;
+  }
+  // Fall back to the only account if there's exactly one
+  if (accounts.size === 1) return accounts.values().next().value!;
+  throw new Error(
+    `claw-swarm: cannot resolve account for accountId=${accountId}, to=${to}`,
+  );
+}
 
 export function createChannel(api: OpenClawApi) {
   const accounts = new Map<string, AccountState>();
@@ -42,57 +62,84 @@ export function createChannel(api: OpenClawApi) {
     },
 
     outbound: {
+      deliveryMode: "direct" as const,
+
       async sendText({
         text,
+        to,
         accountId,
       }: {
         text: string;
-        accountId: string;
-      }): Promise<void> {
-        const state = accounts.get(accountId);
-        if (!state) {
-          throw new Error(
-            `claw-swarm account "${accountId}" is not connected`,
-          );
-        }
+        to: string;
+        accountId?: string | null;
+      }) {
+        const state = resolveState(accounts, accountId, to);
         await state.client.sendMessage(state.botSpaceId, text);
+        return {
+          channel: "claw-swarm" as const,
+          messageId: crypto.randomUUID(),
+        };
+      },
+
+      async sendMedia({
+        text,
+        mediaUrl,
+        to,
+        accountId,
+      }: {
+        text: string;
+        mediaUrl?: string;
+        to: string;
+        accountId?: string | null;
+      }) {
+        const state = resolveState(accounts, accountId, to);
+        await state.client.sendMessage(
+          state.botSpaceId,
+          text || `[Media: ${mediaUrl ?? "unknown"}]`,
+        );
+        return {
+          channel: "claw-swarm" as const,
+          messageId: crypto.randomUUID(),
+        };
       },
     },
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    async setup(cfg: any): Promise<void> {
-      const ids = listAccountIds(cfg);
-
-      for (const accountId of ids) {
-        const acct = resolveAccount(cfg, accountId);
-        if (acct.enabled === false) continue;
-
+    gateway: {
+      async startAccount(ctx: {
+        accountId: string;
+        account: ClawSwarmAccountConfig;
+        log?: { info: (msg: string) => void };
+      }) {
+        const acct = ctx.account;
         const client = new ClawSwarmClient(acct.apiUrl!);
 
         if (!acct.token || !acct.botSpaceId || !acct.botId) {
           throw new Error(
-            `claw-swarm account "${accountId}": token, botSpaceId, and botId are required`,
+            `claw-swarm account "${ctx.accountId}": token, botSpaceId, and botId are required`,
           );
         }
 
         client.setToken(acct.token);
-        const botSpaceId = acct.botSpaceId;
-        const botId = acct.botId;
+        const state: AccountState = {
+          client,
+          botSpaceId: acct.botSpaceId,
+          botId: acct.botId,
+        };
+        accounts.set(ctx.accountId, state);
 
-        const state: AccountState = { client, botSpaceId, botId };
-        accounts.set(accountId, state);
+        ctx.log?.info(
+          `claw-swarm [${ctx.accountId}] polling ${acct.botSpaceId}`,
+        );
 
         client.startPolling(
-          botSpaceId,
+          acct.botSpaceId,
           (msg: CsMessage) => {
-            // Filter out our own messages to prevent echo loops
-            if (msg.senderId === botId) return;
-
+            if (msg.senderId === acct.botId) return;
             api.dispatchMessage({
               channel: "claw-swarm",
               scope: "group",
               peer: msg.botSpaceId,
-              accountId,
+              accountId: ctx.accountId,
               senderId: msg.senderId,
               senderName: msg.senderName,
               text: msg.content,
@@ -100,14 +147,15 @@ export function createChannel(api: OpenClawApi) {
           },
           { intervalMs: acct.pollIntervalMs },
         );
-      }
-    },
+      },
 
-    async teardown(): Promise<void> {
-      for (const [, state] of accounts) {
-        state.client.stopPolling();
-      }
-      accounts.clear();
+      async stopAccount(ctx: { accountId: string }) {
+        const state = accounts.get(ctx.accountId);
+        if (state) {
+          state.client.stopPolling();
+          accounts.delete(ctx.accountId);
+        }
+      },
     },
   };
 }
