@@ -108,6 +108,7 @@ export function createChannel(api: OpenClawApi) {
       async startAccount(ctx: {
         accountId: string;
         account: ClawSwarmAccountConfig;
+        cfg?: Record<string, unknown>;
         log?: { info: (msg: string) => void };
       }) {
         const acct = ctx.account;
@@ -138,19 +139,43 @@ export function createChannel(api: OpenClawApi) {
           acct.botSpaceId,
           (msg: CsMessage) => {
             if (msg.senderId === acct.botId) return;
-            try {
-              api.dispatchMessage({
-                channel: "claw-swarm",
-                scope: "group",
-                peer: msg.botSpaceId,
-                accountId: ctx.accountId,
-                senderId: msg.senderId,
-                senderName: msg.senderName,
-                text: msg.content,
-              });
-            } catch (err) {
+
+            const msgCtx = {
+              Body: msg.content,
+              RawBody: msg.content,
+              CommandBody: msg.content,
+              From: msg.senderId,
+              To: acct.botSpaceId,
+              SessionKey: `claw-swarm:${acct.botSpaceId}`,
+              AccountId: ctx.accountId,
+              ChatType: "group",
+              SenderName: msg.senderName,
+              SenderId: msg.senderId,
+              Provider: "claw-swarm",
+              Surface: "claw-swarm",
+              OriginatingChannel: "claw-swarm",
+              OriginatingTo: acct.botSpaceId,
+              MessageSid: msg.id,
+            };
+
+            const cfg = ctx.cfg ?? api.config;
+
+            api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+              ctx: msgCtx,
+              cfg,
+              dispatcherOptions: {
+                deliver: async (payload: { text?: string }) => {
+                  if (payload.text) {
+                    await client.sendMessage(acct.botSpaceId!, payload.text);
+                  }
+                },
+                onError: (err: unknown) => {
+                  log?.(`reply delivery error: ${err}`);
+                },
+              },
+            }).catch((err: unknown) => {
               log?.(`dispatch error: ${err}`);
-            }
+            });
           },
           { intervalMs: acct.pollIntervalMs },
         );
