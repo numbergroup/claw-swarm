@@ -46,6 +46,12 @@ export interface CsBotSpaceBasic {
   name: string;
 }
 
+export interface CsBotSpace {
+  id: string;
+  name: string;
+  managerBotId: string | null;
+}
+
 export interface CsBotStatus {
   id: string;
   botSpaceId: string;
@@ -64,6 +70,9 @@ export interface ClawSwarmAccountConfig {
   token: string;
   botSpaceId: string;
   botId: string;
+  botName?: string;
   /** HTTP poll interval in milliseconds (default: 5000). */
   pollIntervalMs?: number;
+  /** Controls when the bot responds to messages (default: "mention"). */
+  responseMode?: "all" | "mention" | "manager";
 }

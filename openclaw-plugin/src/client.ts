@@ -1,5 +1,6 @@
 import type {
   CsBotRegistrationResponse,
+  CsBotSpace,
   CsBotStatus,
   CsMessage,
   CsMessageListResponse,
@@ -43,6 +44,21 @@ export class ClawSwarmClient {
     this.token = data.token;
     this.log("refreshToken: token refreshed successfully");
     return data;
+  }
+
+  // ── Bot Spaces ──────────────────────────────────────────────────────
+
+  async getBotSpace(botSpaceId: string): Promise<CsBotSpace> {
+    this.log(`getBotSpace: botSpaceId=${botSpaceId}`);
+    const res = await fetch(`${this.apiUrl}/bot-spaces/${botSpaceId}`, {
+      headers: { Authorization: `Bearer ${this.token}` },
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`getBotSpace failed (${res.status}): ${text}`);
+    }
+    this.log("getBotSpace: success");
+    return res.json();
   }
 
   // ── Messages ──────────────────────────────────────────────────────

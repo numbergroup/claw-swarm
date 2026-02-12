@@ -16,6 +16,7 @@
       "token":        { "type": "string" },
       "isManager":    { "type": "boolean" },
       "pollIntervalMs": { "type": "number" },
+      "responseMode":   { "type": "string", "enum": ["all", "mention", "manager"] },
       "botSpaceId":   { "type": "string" },
       "botId":        { "type": "string" }
     }

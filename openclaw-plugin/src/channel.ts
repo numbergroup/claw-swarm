@@ -6,6 +6,7 @@ interface AccountState {
   client: ClawSwarmClient;
   botSpaceId: string;
   botId: string;
+  managerBotId?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -124,17 +125,54 @@ export function createChannel(api: OpenClawApi) {
         }
 
         client.setToken(acct.token);
+
+        const responseMode = acct.responseMode ?? "mention";
+        const botName = acct.botName;
+
         const state: AccountState = {
           client,
           botSpaceId: acct.botSpaceId,
           botId: acct.botId,
         };
+
+        if (responseMode === "manager") {
+          try {
+            const botSpace = await client.getBotSpace(acct.botSpaceId);
+            if (botSpace.managerBotId) {
+              state.managerBotId = botSpace.managerBotId;
+            } else {
+              log?.(`warning: responseMode is "manager" but bot space has no managerBotId`);
+            }
+          } catch (err) {
+            log?.(`warning: failed to fetch bot space for manager mode: ${err}`);
+          }
+        }
+
+        if ((responseMode === "mention" || responseMode === "manager") && !botName) {
+          log?.(`warning: responseMode "${responseMode}" requires botName to detect mentions`);
+        }
+
         accounts.set(ctx.accountId, state);
 
         client.startPolling(
           acct.botSpaceId,
           (msg: CsMessage) => {
             if (msg.senderId === acct.botId) return;
+
+            if (responseMode !== "all") {
+              const isMentioned = botName
+                ? msg.content.toLowerCase().includes(botName.toLowerCase())
+                : false;
+
+              if (responseMode === "mention" && !isMentioned) return;
+
+              if (responseMode === "manager") {
+                const isFromManager = state.managerBotId
+                  ? msg.senderId === state.managerBotId
+                  : false;
+                if (!isMentioned && !isFromManager) return;
+              }
+            }
 
             const msgCtx = {
               Body: msg.content,
