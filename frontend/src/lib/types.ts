@@ -65,6 +65,18 @@ export interface BotStatus {
   updatedAt: string;
 }
 
+export interface BotSkill {
+  id: string;
+  botSpaceId: string;
+  botId: string;
+  botName: string;
+  name: string;
+  description: string;
+  tags: string[] | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Summary {
   id: string;
   botSpaceId: string;

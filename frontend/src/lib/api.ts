@@ -2,6 +2,7 @@ import type {
   AuthResponse,
   BotSpace,
   Bot,
+  BotSkill,
   BotStatus,
   CreateBotSpaceRequest,
   InviteCode,
@@ -146,6 +147,10 @@ export const removeManager = (spaceId: string, botId: string) =>
 // Statuses
 export const listStatuses = (spaceId: string) =>
   request<BotStatus[]>(`/bot-spaces/${spaceId}/statuses`);
+
+// Skills
+export const listSkills = (spaceId: string) =>
+  request<BotSkill[]>(`/bot-spaces/${spaceId}/skills`);
 
 // Summary
 export const getSummary = (spaceId: string) =>

@@ -9,6 +9,7 @@ import * as api from "@/lib/api";
 import type {
   BotSpace,
   Bot,
+  BotSkill,
   BotStatus,
   Message,
   Summary,
@@ -23,6 +24,7 @@ import { BotStatusPanel } from "@/components/space/bot-status-panel";
 import { JoinCodesPanel } from "@/components/space/join-codes-panel";
 import { InviteCodesPanel } from "@/components/space/invite-codes-panel";
 import { SpaceHeader } from "@/components/space/space-header";
+import { SkillsPanel } from "@/components/space/skills-panel";
 
 type LoadState = "loading" | "ready" | "forbidden" | "notFound" | "error";
 
@@ -61,6 +63,8 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"messages" | "skills">("messages");
+  const [skills, setSkills] = useState<BotSkill[]>([]);
 
   const latestMessageIdRef = useRef<string | null>(null);
   const syncingSinceReconnectRef = useRef(false);
@@ -101,6 +105,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
 
       api.listStatuses(spaceId).then(setStatuses).catch(() => {});
       api.getSummary(spaceId).then(setSummary).catch(() => {});
+      api.listSkills(spaceId).then(setSkills).catch(() => {});
 
       if (spaceData.ownerId === user?.id) {
         api.listInviteCodes(spaceId).then(setInviteCodes).catch(() => {});
@@ -132,6 +137,7 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       api.listBots(spaceId).then(setBots).catch(() => {});
       api.listStatuses(spaceId).then(setStatuses).catch(() => {});
       api.getSummary(spaceId).then(setSummary).catch(() => {});
+      api.listSkills(spaceId).then(setSkills).catch(() => {});
     }, 15000);
 
     return () => clearInterval(interval);
@@ -288,15 +294,42 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
           <div className="border-b border-zinc-800 px-4 py-3">
             <SpaceHeader space={space} isOwner={isOwner} onUpdated={setSpace} />
           </div>
+          <div className="border-b border-zinc-800 px-4 flex gap-4">
+            <button
+              onClick={() => setActiveTab("messages")}
+              className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "messages"
+                  ? "text-blue-400 border-blue-400"
+                  : "text-zinc-400 border-transparent hover:text-zinc-200"
+              }`}
+            >
+              Messages
+            </button>
+            <button
+              onClick={() => setActiveTab("skills")}
+              className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "skills"
+                  ? "text-blue-400 border-blue-400"
+                  : "text-zinc-400 border-transparent hover:text-zinc-200"
+              }`}
+            >
+              Skills
+            </button>
+          </div>
           <div className="flex-1 min-h-0">
-            <ChatPanel
-              spaceId={spaceId}
-              messages={messages}
-              hasMore={hasMore}
-              currentUserId={user?.id ?? ""}
-              onLoadMore={handleLoadMore}
-              loadingMore={loadingMore}
-            />
+            <div className={activeTab !== "messages" ? "hidden" : "h-full"}>
+              <ChatPanel
+                spaceId={spaceId}
+                messages={messages}
+                hasMore={hasMore}
+                currentUserId={user?.id ?? ""}
+                onLoadMore={handleLoadMore}
+                loadingMore={loadingMore}
+              />
+            </div>
+            <div className={activeTab !== "skills" ? "hidden" : "h-full"}>
+              <SkillsPanel skills={skills} />
+            </div>
           </div>
         </div>
 
