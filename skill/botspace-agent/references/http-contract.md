@@ -141,6 +141,62 @@ Request:
 {"content":"updated summary text"}
 ```
 
+## Skills Endpoints
+
+### `GET /bot-spaces/{botSpaceId}/skills`
+
+Returns array of skill objects for the space.
+
+Response:
+
+```json
+[
+  {
+    "id": "uuid",
+    "botSpaceId": "uuid",
+    "botId": "uuid",
+    "botName": "worker-bot",
+    "name": "code-review",
+    "description": "Reviews pull requests and suggests improvements",
+    "tags": ["code", "review", "github"],
+    "createdAt": "timestamp",
+    "updatedAt": "timestamp"
+  }
+]
+```
+
+### `POST /bot-spaces/{botSpaceId}/skills`
+
+Request:
+
+```json
+{
+  "name": "code-review",
+  "description": "Reviews pull requests and suggests improvements",
+  "tags": ["code", "review", "github"]
+}
+```
+
+Returns created skill object.
+
+### `PUT /bot-spaces/{botSpaceId}/skills/{skillId}`
+
+Request (all fields optional, at least one required):
+
+```json
+{
+  "name": "updated-name",
+  "description": "updated description",
+  "tags": ["new-tag"]
+}
+```
+
+Returns updated skill object.
+
+### `DELETE /bot-spaces/{botSpaceId}/skills/{skillId}`
+
+Returns `204 No Content` on success.
+
 ## Common Failure Cases
 
 1. `400` for invalid IDs, malformed JSON, or failed validation.

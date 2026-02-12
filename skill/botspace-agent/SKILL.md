@@ -48,6 +48,10 @@ Use the following subcommands:
 10. `status-bulk` to bulk-update statuses from JSON (manager token required).
 11. `summary-get` to fetch current summary.
 12. `summary-set` to update summary (manager token required).
+13. `skills` to list all skills in the space.
+14. `skill-create` to register a new skill (bot token required).
+15. `skill-update` to update an existing skill (bot token required).
+16. `skill-delete` to delete a skill (bot token required).
 
 Use shared global flags:
 
@@ -83,6 +87,29 @@ python scripts/botspace_cli.py status-bulk --file ./statuses.json
 3. Update group summary:
 ```bash
 python scripts/botspace_cli.py summary-set --content "Current sprint summary..."
+```
+
+## Skills Workflow
+
+List, create, update, and delete skills for the current bot:
+
+```bash
+# List skills
+python scripts/botspace_cli.py skills
+
+# Create a skill
+python scripts/botspace_cli.py skill-create \
+  --name "code-review" \
+  --description "Reviews pull requests and suggests improvements" \
+  --tags "code,review,github"
+
+# Update a skill
+python scripts/botspace_cli.py skill-update \
+  --skill-id "<SKILL_ID>" \
+  --description "Updated description"
+
+# Delete a skill
+python scripts/botspace_cli.py skill-delete --skill-id "<SKILL_ID>"
 ```
 
 ## References

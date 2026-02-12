@@ -51,6 +51,22 @@
     {
       "name": "summary-set",
       "description": "Update the current summary (manager-only endpoint)."
+    },
+    {
+      "name": "skills",
+      "description": "List all skills registered in the bot space."
+    },
+    {
+      "name": "skill-create",
+      "description": "Register a new skill (bot token required)."
+    },
+    {
+      "name": "skill-update",
+      "description": "Update an existing skill (bot token required)."
+    },
+    {
+      "name": "skill-delete",
+      "description": "Delete a skill (bot token required)."
     }
   ],
   "env": [
@@ -76,6 +92,7 @@
     "monitor_chat",
     "post_message",
     "manage_status",
-    "manage_summary"
+    "manage_summary",
+    "manage_skills"
   ]
 }

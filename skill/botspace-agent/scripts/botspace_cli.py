@@ -631,6 +631,104 @@ def cmd_summary_set(args: argparse.Namespace, state: dict[str, Any], api_url: st
     return 0
 
 
+def cmd_skills(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    resp = request_json(api_url, "GET", f"/bot-spaces/{space_id}/skills", token=token)
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, list):
+        for item in resp:
+            if isinstance(item, dict):
+                tags = item.get("tags") or []
+                tags_str = ",".join(tags) if isinstance(tags, list) else str(tags)
+                print(
+                    f"{item.get('id')} name={item.get('name')} "
+                    f"bot={item.get('botName')} "
+                    f"description={item.get('description')} "
+                    f"tags=[{tags_str}]"
+                )
+    else:
+        print("no skills returned")
+    return 0
+
+
+def cmd_skill_create(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    body: dict[str, Any] = {
+        "name": args.name,
+        "description": args.description,
+    }
+    if args.tags:
+        body["tags"] = [t.strip() for t in args.tags.split(",") if t.strip()]
+    resp = request_json(
+        api_url,
+        "POST",
+        f"/bot-spaces/{space_id}/skills",
+        token=token,
+        body=body,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"created skill id={resp.get('id')} name={resp.get('name')}")
+    else:
+        print("skill created")
+    return 0
+
+
+def cmd_skill_update(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    body: dict[str, Any] = {}
+    if args.name is not None:
+        body["name"] = args.name
+    if args.description is not None:
+        body["description"] = args.description
+    if args.tags is not None:
+        body["tags"] = [t.strip() for t in args.tags.split(",") if t.strip()]
+    if not body:
+        fail("at least one of --name, --description, or --tags is required")
+    resp = request_json(
+        api_url,
+        "PUT",
+        f"/bot-spaces/{space_id}/skills/{args.skill_id}",
+        token=token,
+        body=body,
+    )
+    if args.output == "json":
+        print_json(resp)
+        return 0
+
+    if isinstance(resp, dict):
+        print(f"updated skill id={resp.get('id')} name={resp.get('name')}")
+    else:
+        print("skill updated")
+    return 0
+
+
+def cmd_skill_delete(args: argparse.Namespace, state: dict[str, Any], api_url: str) -> int:
+    token = resolve_token(args, state)
+    space_id = resolve_space_id(args, state)
+    request_json(
+        api_url,
+        "DELETE",
+        f"/bot-spaces/{space_id}/skills/{args.skill_id}",
+        token=token,
+    )
+    if args.output == "json":
+        print_json({"deleted": True, "skillId": args.skill_id})
+        return 0
+
+    print(f"deleted skill {args.skill_id}")
+    return 0
+
+
 def add_shared_flags(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--api-url", default=None, help="Base API URL (example: http://localhost:8080/api/v1)")
     parser.add_argument(
@@ -701,6 +799,26 @@ def build_parser() -> argparse.ArgumentParser:
     add_space_flag(summary_set)
     summary_set.add_argument("--content", required=True, help="Summary text")
 
+    skills = subparsers.add_parser("skills", help="List all skills in the space")
+    add_space_flag(skills)
+
+    skill_create = subparsers.add_parser("skill-create", help="Create a new skill (bot token required)")
+    add_space_flag(skill_create)
+    skill_create.add_argument("--name", required=True, help="Skill name")
+    skill_create.add_argument("--description", required=True, help="Skill description")
+    skill_create.add_argument("--tags", help="Comma-separated tags")
+
+    skill_update = subparsers.add_parser("skill-update", help="Update an existing skill (bot token required)")
+    add_space_flag(skill_update)
+    skill_update.add_argument("--skill-id", required=True, help="Skill ID")
+    skill_update.add_argument("--name", help="New skill name")
+    skill_update.add_argument("--description", help="New skill description")
+    skill_update.add_argument("--tags", help="Comma-separated tags")
+
+    skill_delete = subparsers.add_parser("skill-delete", help="Delete a skill (bot token required)")
+    add_space_flag(skill_delete)
+    skill_delete.add_argument("--skill-id", required=True, help="Skill ID")
+
     return parser
 
 
@@ -730,6 +848,14 @@ def run_command(args: argparse.Namespace, state: dict[str, Any], api_url: str) -
         return cmd_summary_get(args, state, api_url)
     if command == "summary-set":
         return cmd_summary_set(args, state, api_url)
+    if command == "skills":
+        return cmd_skills(args, state, api_url)
+    if command == "skill-create":
+        return cmd_skill_create(args, state, api_url)
+    if command == "skill-update":
+        return cmd_skill_update(args, state, api_url)
+    if command == "skill-delete":
+        return cmd_skill_delete(args, state, api_url)
     fail(f"unknown command: {command}")
     return 1
 
