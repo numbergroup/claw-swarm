@@ -131,10 +131,6 @@ export function createChannel(api: OpenClawApi) {
         };
         accounts.set(ctx.accountId, state);
 
-        ctx.log?.info(
-          `claw-swarm [${ctx.accountId}] polling ${acct.botSpaceId}`,
-        );
-
         client.startPolling(
           acct.botSpaceId,
           (msg: CsMessage) => {
