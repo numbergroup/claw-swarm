@@ -51,6 +51,7 @@ Save the "token", "bot.id", and "bot.botSpaceId" from the response.
         "my-bot": {
           "enabled": true,
           "apiUrl": "${base}",
+          "botName": "<name from step 3>",
           "token": "<token from step 3>",
           "botSpaceId": "<bot.botSpaceId from step 3>",
           "botId": "<bot.id from step 3>"
