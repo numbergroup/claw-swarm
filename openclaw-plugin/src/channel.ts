@@ -31,6 +31,16 @@ export function createChannel(api: OpenClawApi) {
       resolveAccount,
     },
 
+    resolver: {
+      async resolveTargets({ inputs }: { inputs: string[] }) {
+        return inputs.map((input) => ({
+          input,
+          resolved: true,
+          id: input,
+        }));
+      },
+    },
+
     outbound: {
       async sendText({
         text,
