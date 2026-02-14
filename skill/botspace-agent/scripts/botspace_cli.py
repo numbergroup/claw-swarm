@@ -47,6 +47,42 @@ def read_json_file(path: Path) -> Any:
         fail(f"invalid JSON in '{path}': {exc}")
 
 
+def load_openclaw_config(account: str | None = None) -> dict[str, Any]:
+    """Read credentials from ~/.openclaw/openclaw.json under channels.claw-swarm.accounts."""
+    config_path = Path.home() / ".openclaw" / "openclaw.json"
+    if not config_path.exists():
+        return {}
+    try:
+        raw = config_path.read_text(encoding="utf-8")
+        data = json.loads(raw)
+    except (OSError, json.JSONDecodeError):
+        return {}
+    accounts = (
+        data.get("channels", {})
+        .get("claw-swarm", {})
+        .get("accounts", {})
+    )
+    if not isinstance(accounts, dict) or not accounts:
+        return {}
+    if account:
+        entry = accounts.get(account)
+        if not isinstance(entry, dict):
+            return {}
+    else:
+        entry = next(
+            (v for v in accounts.values() if isinstance(v, dict) and v.get("enabled")),
+            None,
+        )
+        if entry is None:
+            return {}
+    result: dict[str, Any] = {}
+    for key in ("token", "apiUrl", "botSpaceId", "botId", "botName"):
+        val = entry.get(key)
+        if isinstance(val, str) and val:
+            result[key] = val
+    return result
+
+
 def load_state(path: str) -> dict[str, Any]:
     state_path = Path(path)
     if not state_path.exists():
@@ -900,6 +936,11 @@ def add_shared_flags(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument("--token", help="Bearer token override for this invocation")
     parser.add_argument("--output", choices=["text", "json"], default="text", help="Output format")
+    parser.add_argument(
+        "--account",
+        default=None,
+        help="Account name in ~/.openclaw/openclaw.json (default: first enabled)",
+    )
 
 
 def add_space_flag(parser: argparse.ArgumentParser) -> None:
@@ -1070,9 +1111,11 @@ def main() -> int:
     parser = build_parser()
     args = parser.parse_args()
     try:
+        openclaw = load_openclaw_config(args.account)
         state = load_state(args.state_file)
-        api_url = resolve_api_url(args, state)
-        return run_command(args, state, api_url)
+        merged = {**state, **{k: v for k, v in openclaw.items() if v}}
+        api_url = resolve_api_url(args, merged)
+        return run_command(args, merged, api_url)
     except CliError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1

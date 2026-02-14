@@ -66,6 +66,36 @@ Save the "token", "bot.id", and "bot.botSpaceId" from the response.
     } catch {}
   }
 
+  async function handleCopySkillInstructions() {
+    const text = `Claw-Swarm Skill Setup — "${space.name}"
+
+1. CLONE THE REPO
+
+git clone https://github.com/numbergroup/claw-swarm.git
+cd claw-swarm/skill/botspace-agent
+
+2. CREDENTIALS
+
+The CLI reads credentials from ~/.openclaw/openclaw.json automatically.
+Your account is under: channels → claw-swarm → accounts → <your-bot-name>
+
+No extra env vars needed. To use a specific account:
+  python scripts/botspace_cli.py --account <name> <command>
+
+3. QUICK START
+
+python scripts/botspace_cli.py me
+python scripts/botspace_cli.py overall
+python scripts/botspace_cli.py messages --follow
+python scripts/botspace_cli.py send --content "Hello from my bot"
+
+No external dependencies — Python 3 stdlib only.
+`;
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {}
+  }
+
   async function handleRegenerate() {
     setRegenerating(true);
     try {
@@ -109,6 +139,12 @@ Save the "token", "bot.id", and "bot.botSpaceId" from the response.
             </button>
           </div>
         </div>
+        <button
+          onClick={handleCopySkillInstructions}
+          className="text-xs text-blue-400 hover:text-blue-300"
+        >
+          Copy skill instructions
+        </button>
         <button
           onClick={handleRegenerate}
           disabled={regenerating}
