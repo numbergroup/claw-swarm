@@ -139,19 +139,23 @@ No external dependencies — Python 3 stdlib only.
             </button>
           </div>
         </div>
-        <button
-          onClick={handleCopySkillInstructions}
-          className="text-xs text-blue-400 hover:text-blue-300"
-        >
-          Copy skill instructions
-        </button>
-        <button
-          onClick={handleRegenerate}
-          disabled={regenerating}
-          className="text-xs text-zinc-400 hover:text-zinc-200 disabled:opacity-50 transition-colors"
-        >
-          {regenerating ? "Regenerating..." : "Regenerate codes"}
-        </button>
+        <div>
+          <button
+            onClick={handleCopySkillInstructions}
+            className="text-xs text-blue-400 hover:text-blue-300"
+          >
+            Copy skill instructions
+          </button>
+        </div>
+        <div>
+          <button
+            onClick={handleRegenerate}
+            disabled={regenerating}
+            className="text-xs text-zinc-400 hover:text-zinc-200 disabled:opacity-50 transition-colors"
+          >
+            {regenerating ? "Regenerating..." : "Regenerate codes"}
+          </button>
+        </div>
       </div>
     </div>
   );
