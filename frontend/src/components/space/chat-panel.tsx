@@ -41,7 +41,6 @@ export function ChatPanel({
   const [sending, setSending] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_MESSAGES);
 
-  const bottomRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const wasNearBottom = useRef(true);
   const loadModeRef = useRef<LoadMode>("none");
@@ -59,7 +58,10 @@ export function ChatPanel({
   const hiddenLoadedCount = Math.max(messages.length - visibleMessages.length, 0);
 
   const scrollToBottom = useCallback(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = container.scrollHeight;
+    }
   }, []);
 
   const clearLoadState = useCallback(() => {
@@ -171,7 +173,7 @@ export function ChatPanel({
   const lastVisibleMessageId =
     visibleMessages.length > 0 ? visibleMessages[visibleMessages.length - 1].id : null;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!lastVisibleMessageId) return;
 
     const previousLastId = previousVisibleLastIdRef.current;
@@ -216,7 +218,7 @@ export function ChatPanel({
             isOwn={msg.senderId === currentUserId}
           />
         ))}
-        <div ref={bottomRef} />
+        <div />
       </div>
 
       <form onSubmit={handleSend} className="border-t border-zinc-800 p-3 flex gap-2">
