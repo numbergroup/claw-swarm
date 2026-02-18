@@ -35,7 +35,6 @@ function resolveState(
 async function buildManagerContext(
   client: ClawSwarmClient,
   botSpaceId: string,
-  msg: CsMessage,
   log?: (msg: string) => void,
 ): Promise<string> {
   const [statuses, inProgressTasks, availableTasks] = await Promise.all([
@@ -66,17 +65,6 @@ async function buildManagerContext(
   ctx += "\n</tasks-available>";
 
   ctx += "\n</manager-context>";
-  if (msg.senderType === "bot") {
-    ctx += "\n<manager-instructions>";
-    ctx += "\nIf you need to update bot statuses or manage tasks, include a <manager-actions> block in your reply.";
-    ctx += "\nAvailable actions:";
-    ctx += '\n  <status-update botId="BOT_ID" status="new status text" />';
-    ctx += '\n  <task-create name="task name" description="task description" />';
-    ctx += '\n  <task-create name="task name" description="task description" botId="BOT_ID" />';
-    ctx += '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />';
-    ctx += "\nThe <manager-actions> block will be stripped from your message before sending.";
-    ctx += "\n</manager-instructions>";
-  }
   return ctx;
 }
 
@@ -147,6 +135,73 @@ async function parseAndExecuteManagerActions(
   }
 
   return text.replace(actionBlockRegex, "").trim();
+}
+
+async function dispatchManagerActions(
+  api: OpenClawApi,
+  client: ClawSwarmClient,
+  acct: ClawSwarmAccountConfig,
+  managerContext: string,
+  messageBody: string,
+  cfg: Record<string, unknown>,
+  accountId: string,
+  log?: (msg: string) => void,
+): Promise<void> {
+  const prompt =
+    managerContext +
+    "\n<task>" +
+    "\nAnalyze the messages below and decide if any bot statuses or tasks need updating." +
+    "\nIf updates are needed, respond ONLY with a <manager-actions> block." +
+    "\nIf no updates are needed, respond with an empty message." +
+    "\nAvailable actions:" +
+    '\n  <status-update botId="BOT_ID" status="new status text" />' +
+    '\n  <task-create name="task name" description="task description" />' +
+    '\n  <task-create name="task name" description="task description" botId="BOT_ID" />' +
+    '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />' +
+    "\n</task>" +
+    "\n" +
+    messageBody;
+
+  const msgCtx = {
+    Body: prompt,
+    RawBody: prompt,
+    CommandBody: prompt,
+    From: acct.botId,
+    To: acct.botSpaceId,
+    SessionKey: `claw-swarm:${acct.botSpaceId}:manager-actions`,
+    AccountId: accountId,
+    ChatType: "group",
+    SenderName: "system",
+    SenderId: acct.botId,
+    Provider: "claw-swarm",
+    Surface: "claw-swarm",
+    OriginatingChannel: "claw-swarm",
+    OriginatingTo: acct.botSpaceId,
+    MessageSid: `manager-actions-${Date.now()}`,
+  };
+
+  log?.("dispatching manager actions LLM call...");
+  await api.runtime.channel.reply.dispatchInboundMessageWithBufferedDispatcher(
+    {
+      ctx: msgCtx,
+      cfg,
+      dispatcherOptions: {
+        deliver: async (payload: { text?: string }) => {
+          if (!payload.text) return;
+          log?.("manager actions LLM responded, executing actions...");
+          await parseAndExecuteManagerActions(
+            client,
+            acct.botSpaceId,
+            payload.text,
+            log,
+          );
+        },
+        onError: (err: unknown) => {
+          log?.(`manager actions dispatch error: ${err}`);
+        },
+      },
+    },
+  );
 }
 
 export function createChannel(api: OpenClawApi) {
@@ -314,11 +369,19 @@ export function createChannel(api: OpenClawApi) {
                 )
                 .join("\n");
 
+              const cfg = ctx.cfg ?? api.config;
+
               if (acct.isManager) {
                 log?.(`fetching manager context for message ${msg.id}...`);
                 try {
-                  body += await buildManagerContext(client, acct.botSpaceId, msg, log);
-                 
+                  const managerCtx = await buildManagerContext(client, acct.botSpaceId, log);
+                  body += managerCtx;
+
+                  if (msg.senderType === "bot") {
+                    dispatchManagerActions(
+                      api, client, acct, managerCtx, body, cfg, ctx.accountId, log,
+                    ).catch((err) => log?.(`manager actions failed: ${err}`));
+                  }
                 } catch (err) {
                   log?.(`failed to fetch manager context: ${err}`);
                 }
@@ -342,8 +405,6 @@ export function createChannel(api: OpenClawApi) {
                 MessageSid: msg.id,
               };
 
-              const cfg = ctx.cfg ?? api.config;
-
               await api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
                 ctx: msgCtx,
                 cfg,
@@ -354,20 +415,8 @@ export function createChannel(api: OpenClawApi) {
                       return;
                     }
                     log?.(`delivering reply to message ${msg.id}... `);
-                    if (!payload.text) return;
-                    let text = payload.text;
-                    
-                    if (acct.isManager && msg.senderType === "bot") {
-                      log?.(`processing manager actions in reply...`);
-                      text = await parseAndExecuteManagerActions(
-                        client,
-                        acct.botSpaceId,
-                        text,
-                        log,
-                      );
-                    }
-                    if (text) {
-                      await client.sendMessage(acct.botSpaceId!, text);
+                    if (payload.text) {
+                      await client.sendMessage(acct.botSpaceId!, payload.text);
                     }
                   },
                   onSkip: (payload:{text?: string}, info: { kind: string; reason: string }) => {
