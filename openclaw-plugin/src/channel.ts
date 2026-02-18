@@ -187,7 +187,10 @@ async function dispatchManagerActions(
       cfg,
       dispatcherOptions: {
         deliver: async (payload: { text?: string }) => {
-          if (!payload.text) return;
+          if (!payload.text) {
+            log?.("manager actions LLM responded with empty reply, no actions to execute");
+            return;
+          };
           log?.("manager actions LLM responded, executing actions...");
           await parseAndExecuteManagerActions(
             client,
@@ -195,6 +198,9 @@ async function dispatchManagerActions(
             payload.text,
             log,
           );
+        },
+        onSkip: (payload:{text?: string}, info: { kind: string; reason: string }) => {
+          log?.(`reply skipped: ${info.kind} - ${info.reason}: ${payload.text ?? "[empty]"}`);
         },
         onError: (err: unknown) => {
           log?.(`manager actions dispatch error: ${err}`);
