@@ -181,7 +181,7 @@ async function dispatchManagerActions(
   };
 
   log?.("dispatching manager actions LLM call...");
-  await api.runtime.channel.reply.dispatchInboundMessageWithBufferedDispatcher(
+  await api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher(
     {
       ctx: msgCtx,
       cfg,
@@ -421,7 +421,7 @@ export function createChannel(api: OpenClawApi) {
                       return;
                     }
                     log?.(`delivering reply to message ${msg.id}... `);
-                    if (payload.text) {
+                    if (payload.text && !payload.text.includes("<manager-actions>")) {
                       await client.sendMessage(acct.botSpaceId!, payload.text);
                     }
                   },
