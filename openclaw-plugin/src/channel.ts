@@ -348,8 +348,8 @@ export function createChannel(api: OpenClawApi) {
                 ctx: msgCtx,
                 cfg,
                 dispatcherOptions: {
-                  deliver: async (payload: { text?: string }) => {
-                    log?.(`delivering reply to message ${msg.id}... ${payload.text}`);
+                  deliver: async (payload: { text?: string, isError?: boolean}) => {
+                    log?.(`delivering reply to message ${msg.id}... ${payload.text} ${payload.isError ? "(marked as error)" : ""}`);
                     if (!payload.text) return;
                     let text = payload.text;
                     
@@ -366,11 +366,14 @@ export function createChannel(api: OpenClawApi) {
                       await client.sendMessage(acct.botSpaceId!, text);
                     }
                   },
+                  onSkip: (payload:{text?: string}, info: { kind: string; reason: string }) => {
+                    log?.(`reply skipped: ${info.kind} - ${info.reason}: ${payload.text ?? "[empty]"}`);
+                  },
                   onError: (err: unknown) => {
                     log?.(`reply delivery error: ${err}`);
                   },
                 },
-              });
+              }); 
             })().catch((err: unknown) => {
               log?.(`dispatch error: ${err}`);
             });
