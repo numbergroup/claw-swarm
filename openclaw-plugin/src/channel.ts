@@ -63,7 +63,84 @@ async function buildManagerContext(
   ctx += "\n</tasks-available>";
 
   ctx += "\n</manager-context>";
+
+  ctx += "\n<manager-instructions>";
+  ctx += "\nIf you need to update bot statuses or manage tasks, include a <manager-actions> block in your reply.";
+  ctx += "\nAvailable actions:";
+  ctx += '\n  <status-update botId="BOT_ID" status="new status text" />';
+  ctx += '\n  <task-create name="task name" description="task description" />';
+  ctx += '\n  <task-create name="task name" description="task description" botId="BOT_ID" />';
+  ctx += '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />';
+  ctx += "\nThe <manager-actions> block will be stripped from your message before sending.";
+  ctx += "\n</manager-instructions>";
+
   return ctx;
+}
+
+async function parseAndExecuteManagerActions(
+  client: ClawSwarmClient,
+  botSpaceId: string,
+  text: string,
+  log?: (msg: string) => void,
+): Promise<string> {
+  const actionBlockRegex = /<manager-actions>([\s\S]*?)<\/manager-actions>/g;
+  const matches = [...text.matchAll(actionBlockRegex)];
+  if (matches.length === 0) return text;
+
+  for (const match of matches) {
+    const block = match[1];
+
+    const statusUpdates = [
+      ...block.matchAll(
+        /<status-update\s+botId="([^"]+)"\s+status="([^"]+)"\s*\/>/g,
+      ),
+    ];
+    for (const [, botId, status] of statusUpdates) {
+      try {
+        await client.updateBotStatus(botSpaceId, botId, status);
+        log?.(`manager action: updated status for ${botId} to "${status}"`);
+      } catch (err) {
+        log?.(`manager action failed (status-update): ${err}`);
+      }
+    }
+
+    const taskCreates = [
+      ...block.matchAll(
+        /<task-create\s+name="([^"]+)"\s+description="([^"]+)"(?:\s+botId="([^"]+)")?\s*\/>/g,
+      ),
+    ];
+    for (const [, name, description, botId] of taskCreates) {
+      try {
+        await client.createTask(
+          botSpaceId,
+          name,
+          description,
+          botId || undefined,
+        );
+        log?.(
+          `manager action: created task "${name}"${botId ? ` assigned to ${botId}` : ""}`,
+        );
+      } catch (err) {
+        log?.(`manager action failed (task-create): ${err}`);
+      }
+    }
+
+    const taskAssigns = [
+      ...block.matchAll(
+        /<task-assign\s+taskId="([^"]+)"\s+botId="([^"]+)"\s*\/>/g,
+      ),
+    ];
+    for (const [, taskId, botId] of taskAssigns) {
+      try {
+        await client.assignTask(botSpaceId, taskId, botId);
+        log?.(`manager action: assigned task ${taskId} to ${botId}`);
+      } catch (err) {
+        log?.(`manager action failed (task-assign): ${err}`);
+      }
+    }
+  }
+
+  return text.replace(actionBlockRegex, "").trim();
 }
 
 export function createChannel(api: OpenClawApi) {
@@ -234,6 +311,7 @@ export function createChannel(api: OpenClawApi) {
               if (acct.isManager) {
                 try {
                   body = await buildManagerContext(client, acct.botSpaceId) + "\n" + body;
+                 
                 } catch (err) {
                   log?.(`failed to fetch manager context: ${err}`);
                 }
@@ -264,8 +342,18 @@ export function createChannel(api: OpenClawApi) {
                 cfg,
                 dispatcherOptions: {
                   deliver: async (payload: { text?: string }) => {
-                    if (payload.text) {
-                      await client.sendMessage(acct.botSpaceId!, payload.text);
+                    if (!payload.text) return;
+                    let text = payload.text;
+                    if (acct.isManager && msg.senderType === "bot") {
+                      text = await parseAndExecuteManagerActions(
+                        client,
+                        acct.botSpaceId,
+                        text,
+                        log,
+                      );
+                    }
+                    if (text) {
+                      await client.sendMessage(acct.botSpaceId!, text);
                     }
                   },
                   onError: (err: unknown) => {
