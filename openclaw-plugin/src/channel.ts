@@ -381,7 +381,7 @@ export function createChannel(api: OpenClawApi) {
                 log?.(`fetching manager context for message ${msg.id}...`);
                 try {
                   const managerCtx = await buildManagerContext(client, acct.botSpaceId, log);
-                  body += managerCtx;
+                  body = managerCtx + "\n" + body;
 
                   if (msg.senderType === "bot") {
                     dispatchManagerActions(
