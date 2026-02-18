@@ -36,12 +36,14 @@ async function buildManagerContext(
   client: ClawSwarmClient,
   botSpaceId: string,
   msg: CsMessage,
+  log?: (msg: string) => void,
 ): Promise<string> {
   const [statuses, inProgressTasks, availableTasks] = await Promise.all([
     client.listStatuses(botSpaceId),
     client.listTasks(botSpaceId, { status: "in_progress" }),
     client.listTasks(botSpaceId, { status: "available" }),
   ]);
+  log?.(`fetched manager context: ${statuses.length} bot statuses, ${inProgressTasks.length} in-progress tasks, ${availableTasks.length} available tasks`);
 
   let ctx = "\n<manager-context>";
 
