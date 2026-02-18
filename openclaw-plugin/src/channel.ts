@@ -101,6 +101,7 @@ async function parseAndExecuteManagerActions(
     ];
     for (const [, botId, status] of statusUpdates) {
       try {
+        log?.(`updating status for bot ${botId} to "${status}"...`);
         await client.updateBotStatus(botSpaceId, botId, status);
         log?.(`manager action: updated status for ${botId} to "${status}"`);
       } catch (err) {
@@ -115,6 +116,7 @@ async function parseAndExecuteManagerActions(
     ];
     for (const [, name, description, botId] of taskCreates) {
       try {
+        log?.(`creating task "${name}"${botId ? ` assigned to ${botId}` : ""}...`);
         await client.createTask(
           botSpaceId,
           name,
