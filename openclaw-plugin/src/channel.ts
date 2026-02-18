@@ -86,7 +86,7 @@ async function parseAndExecuteManagerActions(
   text: string,
   log?: (msg: string) => void,
 ): Promise<string> {
-  log?.(`parsing manager actions... \n${text}`);
+  log?.(`parsing manager actions... `);
   const actionBlockRegex = /<manager-actions>([\s\S]*?)<\/manager-actions>/g;
   const matches = [...text.matchAll(actionBlockRegex)];
   if (matches.length === 0) return text;
@@ -317,7 +317,7 @@ export function createChannel(api: OpenClawApi) {
               if (acct.isManager) {
                 log?.(`fetching manager context for message ${msg.id}...`);
                 try {
-                  body = await buildManagerContext(client, acct.botSpaceId, msg, log) + "\n" + body;
+                  body += await buildManagerContext(client, acct.botSpaceId, msg, log);
                  
                 } catch (err) {
                   log?.(`failed to fetch manager context: ${err}`);
@@ -349,7 +349,11 @@ export function createChannel(api: OpenClawApi) {
                 cfg,
                 dispatcherOptions: {
                   deliver: async (payload: { text?: string, isError?: boolean}) => {
-                    log?.(`delivering reply to message ${msg.id}... ${payload.text} ${payload.isError ? "(marked as error)" : ""}`);
+                    if (payload.isError) {
+                      log?.(`reply marked as error, ${payload.text}... dropping reply`);
+                      return;
+                    }
+                    log?.(`delivering reply to message ${msg.id}... `);
                     if (!payload.text) return;
                     let text = payload.text;
                     
