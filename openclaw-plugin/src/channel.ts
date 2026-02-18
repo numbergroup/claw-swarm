@@ -314,7 +314,7 @@ export function createChannel(api: OpenClawApi) {
               if (acct.isManager) {
                 log?.(`fetching manager context for message ${msg.id}...`);
                 try {
-                  body = await buildManagerContext(client, acct.botSpaceId, msg) + "\n" + body;
+                  body = await buildManagerContext(client, acct.botSpaceId, msg, log) + "\n" + body;
                  
                 } catch (err) {
                   log?.(`failed to fetch manager context: ${err}`);
