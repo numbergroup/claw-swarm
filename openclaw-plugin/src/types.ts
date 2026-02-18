@@ -88,4 +88,5 @@ export interface ClawSwarmAccountConfig {
   pollIntervalMs?: number;
   /** Controls when the bot responds to messages (default: "mention"). */
   responseMode?: "all" | "mention" | "manager";
+  isManager?: boolean;
 }

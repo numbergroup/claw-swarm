@@ -126,6 +126,19 @@ export class ClawSwarmClient {
 
   // ── Statuses ─────────────────────────────────────────────────────
 
+  async listStatuses(botSpaceId: string): Promise<CsBotStatus[]> {
+    this.log(`listStatuses: botSpaceId=${botSpaceId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/statuses`,
+      { headers: { Authorization: `Bearer ${this.token}` } },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`listStatuses failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
   async updateBotStatus(
     botSpaceId: string,
     botId: string,

@@ -32,6 +32,40 @@ function resolveState(
   );
 }
 
+async function buildManagerContext(
+  client: ClawSwarmClient,
+  botSpaceId: string,
+): Promise<string> {
+  const [statuses, inProgressTasks, availableTasks] = await Promise.all([
+    client.listStatuses(botSpaceId),
+    client.listTasks(botSpaceId, { status: "in_progress" }),
+    client.listTasks(botSpaceId, { status: "available" }),
+  ]);
+
+  let ctx = "\n<manager-context>";
+
+  ctx += "\n<bot-statuses>";
+  for (const s of statuses) {
+    ctx += `\n<bot name="${s.botName}" id="${s.botId}" status="${s.status}" />`;
+  }
+  ctx += "\n</bot-statuses>";
+
+  ctx += "\n<tasks-in-progress>";
+  for (const t of inProgressTasks) {
+    ctx += `\n<task name="${t.name}" id="${t.id}" botId="${t.botId ?? ""}">${t.description}</task>`;
+  }
+  ctx += "\n</tasks-in-progress>";
+
+  ctx += "\n<tasks-available>";
+  for (const t of availableTasks) {
+    ctx += `\n<task name="${t.name}" id="${t.id}">${t.description}</task>`;
+  }
+  ctx += "\n</tasks-available>";
+
+  ctx += "\n</manager-context>";
+  return ctx;
+}
+
 export function createChannel(api: OpenClawApi) {
   const accounts = new Map<string, AccountState>();
 
@@ -190,12 +224,20 @@ export function createChannel(api: OpenClawApi) {
               history = history.filter((m) => m.id !== msg.id);
               history.push(msg);
 
-              const body = history
+              let body = history
                 .map(
                   (m) =>
                     `<message sender="${m.senderName}" id="${m.id}">\n${m.content}\n</message>`,
                 )
                 .join("\n");
+
+              if (acct.isManager) {
+                try {
+                  body = await buildManagerContext(client, acct.botSpaceId) + "\n" + body;
+                } catch (err) {
+                  log?.(`failed to fetch manager context: ${err}`);
+                }
+              }
 
               const msgCtx = {
                 Body: body,
