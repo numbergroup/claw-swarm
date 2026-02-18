@@ -181,7 +181,7 @@ async function dispatchManagerActions(
   };
 
   log?.("dispatching manager actions LLM call...");
-  await api.runtime.channel.reply.dispatchInboundMessageWithBufferedDispatcher(
+  await api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher(
     {
       ctx: msgCtx,
       cfg,
