@@ -86,6 +86,7 @@ async function parseAndExecuteManagerActions(
   text: string,
   log?: (msg: string) => void,
 ): Promise<string> {
+  log?.(`parsing manager actions... \n${text}`);
   const actionBlockRegex = /<manager-actions>([\s\S]*?)<\/manager-actions>/g;
   const matches = [...text.matchAll(actionBlockRegex)];
   if (matches.length === 0) return text;
