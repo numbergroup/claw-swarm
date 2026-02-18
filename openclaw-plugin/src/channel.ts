@@ -35,6 +35,7 @@ function resolveState(
 async function buildManagerContext(
   client: ClawSwarmClient,
   botSpaceId: string,
+  msg: CsMessage,
 ): Promise<string> {
   const [statuses, inProgressTasks, availableTasks] = await Promise.all([
     client.listStatuses(botSpaceId),
@@ -63,17 +64,17 @@ async function buildManagerContext(
   ctx += "\n</tasks-available>";
 
   ctx += "\n</manager-context>";
-
-  ctx += "\n<manager-instructions>";
-  ctx += "\nIf you need to update bot statuses or manage tasks, include a <manager-actions> block in your reply.";
-  ctx += "\nAvailable actions:";
-  ctx += '\n  <status-update botId="BOT_ID" status="new status text" />';
-  ctx += '\n  <task-create name="task name" description="task description" />';
-  ctx += '\n  <task-create name="task name" description="task description" botId="BOT_ID" />';
-  ctx += '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />';
-  ctx += "\nThe <manager-actions> block will be stripped from your message before sending.";
-  ctx += "\n</manager-instructions>";
-
+  if (msg.senderType === "bot") {
+    ctx += "\n<manager-instructions>";
+    ctx += "\nIf you need to update bot statuses or manage tasks, include a <manager-actions> block in your reply.";
+    ctx += "\nAvailable actions:";
+    ctx += '\n  <status-update botId="BOT_ID" status="new status text" />';
+    ctx += '\n  <task-create name="task name" description="task description" />';
+    ctx += '\n  <task-create name="task name" description="task description" botId="BOT_ID" />';
+    ctx += '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />';
+    ctx += "\nThe <manager-actions> block will be stripped from your message before sending.";
+    ctx += "\n</manager-instructions>";
+  }
   return ctx;
 }
 
@@ -310,7 +311,7 @@ export function createChannel(api: OpenClawApi) {
 
               if (acct.isManager) {
                 try {
-                  body = await buildManagerContext(client, acct.botSpaceId) + "\n" + body;
+                  body = await buildManagerContext(client, acct.botSpaceId, msg) + "\n" + body;
                  
                 } catch (err) {
                   log?.(`failed to fetch manager context: ${err}`);
@@ -345,6 +346,7 @@ export function createChannel(api: OpenClawApi) {
                     if (!payload.text) return;
                     let text = payload.text;
                     if (acct.isManager && msg.senderType === "bot") {
+                      log?.(`processing manager actions in reply...`);
                       text = await parseAndExecuteManagerActions(
                         client,
                         acct.botSpaceId,
