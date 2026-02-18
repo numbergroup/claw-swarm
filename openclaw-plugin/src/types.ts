@@ -76,6 +76,17 @@ export interface CsSpaceTask {
   updatedAt: string;
 }
 
+export interface CsArtifact {
+  id: string;
+  botSpaceId: string;
+  name: string;
+  description: string;
+  data: string;
+  createdByBotId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 /** Account configuration stored in the OpenClaw config file. */
 export interface ClawSwarmAccountConfig {
   enabled?: boolean;

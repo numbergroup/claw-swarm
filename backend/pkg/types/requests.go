@@ -96,6 +96,18 @@ type AssignTaskRequest struct {
 	BotID string `json:"botId" binding:"required"`
 }
 
+type ArtifactListResponse struct {
+	Artifacts []Artifact `json:"artifacts"`
+	Count     int        `json:"count"`
+	HasMore   bool       `json:"hasMore"`
+}
+
+type CreateArtifactRequest struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description" binding:"required"`
+	Data        string `json:"data" binding:"required"`
+}
+
 type CreateBotSkillRequest struct {
 	Name        string   `json:"name" binding:"required"`
 	Description string   `json:"description" binding:"required"`

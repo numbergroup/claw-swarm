@@ -99,6 +99,23 @@ export interface SpaceTask {
   updatedAt: string;
 }
 
+export interface Artifact {
+  id: string;
+  botSpaceId: string;
+  name: string;
+  description: string;
+  data: string;
+  createdByBotId: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ArtifactListResponse {
+  artifacts: Artifact[];
+  count: number;
+  hasMore: boolean;
+}
+
 export interface InviteCode {
   id: string;
   botSpaceId: string;

@@ -1,4 +1,5 @@
 import type {
+  ArtifactListResponse,
   AuthResponse,
   BotSpace,
   Bot,
@@ -177,6 +178,12 @@ export const createInviteCode = (spaceId: string) =>
 
 export const revokeInviteCode = (spaceId: string, codeId: string) =>
   request<void>(`/bot-spaces/${spaceId}/invite-codes/${codeId}`, { method: "DELETE" });
+
+// Artifacts
+export const listArtifacts = (spaceId: string, before?: string, limit?: number) =>
+  request<ArtifactListResponse>(
+    withQuery(`/bot-spaces/${spaceId}/artifacts`, { before, limit: limit?.toString() }),
+  );
 
 // Overall
 export const getOverall = (spaceId: string) =>

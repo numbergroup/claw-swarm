@@ -7,6 +7,7 @@ import { useAuth } from "@/lib/auth-context";
 import { useWebSocket } from "@/lib/use-websocket";
 import * as api from "@/lib/api";
 import type {
+  Artifact,
   BotSpace,
   Bot,
   BotSkill,
@@ -27,6 +28,7 @@ import { InviteCodesPanel } from "@/components/space/invite-codes-panel";
 import { SpaceHeader } from "@/components/space/space-header";
 import { SkillsPanel } from "@/components/space/skills-panel";
 import { TasksPanel } from "@/components/space/tasks-panel";
+import { ArtifactsPanel } from "@/components/space/artifacts-panel";
 
 type LoadState = "loading" | "ready" | "forbidden" | "notFound" | "error";
 
@@ -65,9 +67,12 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
   const [loadState, setLoadState] = useState<LoadState>("loading");
   const [loadingMore, setLoadingMore] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"messages" | "skills" | "tasks">("messages");
+  const [activeTab, setActiveTab] = useState<"messages" | "skills" | "tasks" | "artifacts">("messages");
   const [skills, setSkills] = useState<BotSkill[]>([]);
   const [tasks, setTasks] = useState<SpaceTask[]>([]);
+  const [artifacts, setArtifacts] = useState<Artifact[]>([]);
+  const [artifactsHasMore, setArtifactsHasMore] = useState(false);
+  const [artifactsLoadingMore, setArtifactsLoadingMore] = useState(false);
 
   const latestMessageIdRef = useRef<string | null>(null);
   const syncingSinceReconnectRef = useRef(false);
@@ -110,6 +115,10 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       api.getSummary(spaceId).then(setSummary).catch(() => {});
       api.listSkills(spaceId).then(setSkills).catch(() => {});
       api.listTasks(spaceId).then(setTasks).catch(() => {});
+      api.listArtifacts(spaceId).then((res) => {
+        setArtifacts(res.artifacts);
+        setArtifactsHasMore(res.hasMore);
+      }).catch(() => {});
 
       if (spaceData.ownerId === user?.id) {
         api.listInviteCodes(spaceId).then(setInviteCodes).catch(() => {});
@@ -202,6 +211,22 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       setLoadingMore(false);
     }
   }, [hasMore, loadingMore, messages, spaceId]);
+
+  const handleLoadMoreArtifacts = useCallback(async () => {
+    if (artifactsLoadingMore || !artifactsHasMore || artifacts.length === 0) return;
+
+    setArtifactsLoadingMore(true);
+    try {
+      const oldest = artifacts[artifacts.length - 1];
+      const res = await api.listArtifacts(spaceId, oldest.id);
+      setArtifacts((prev) => [...prev, ...res.artifacts]);
+      setArtifactsHasMore(res.hasMore);
+    } catch {
+      // Keep current state on failure.
+    } finally {
+      setArtifactsLoadingMore(false);
+    }
+  }, [artifactsHasMore, artifactsLoadingMore, artifacts, spaceId]);
 
   const refreshBots = useCallback(() => {
     api.listBots(spaceId).then(setBots).catch(() => {});
@@ -330,6 +355,16 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
             >
               Tasks
             </button>
+            <button
+              onClick={() => setActiveTab("artifacts")}
+              className={`py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === "artifacts"
+                  ? "text-blue-400 border-blue-400"
+                  : "text-zinc-400 border-transparent hover:text-zinc-200"
+              }`}
+            >
+              Artifacts
+            </button>
           </div>
           <div className="flex-1 min-h-0">
             <div className={activeTab !== "messages" ? "hidden" : "h-full"}>
@@ -347,6 +382,14 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
             </div>
             <div className={activeTab !== "tasks" ? "hidden" : "h-full"}>
               <TasksPanel tasks={tasks} bots={bots} />
+            </div>
+            <div className={activeTab !== "artifacts" ? "hidden" : "h-full"}>
+              <ArtifactsPanel
+                artifacts={artifacts}
+                hasMore={artifactsHasMore}
+                onLoadMore={handleLoadMoreArtifacts}
+                loadingMore={artifactsLoadingMore}
+              />
             </div>
           </div>
         </div>

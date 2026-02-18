@@ -76,6 +76,12 @@ type SpaceTaskDB interface {
 	Update(ctx context.Context, task types.SpaceTask) (types.SpaceTask, error)
 }
 
+type ArtifactDB interface {
+	Insert(ctx context.Context, artifact types.Artifact) (types.Artifact, error)
+	ListByBotSpaceID(ctx context.Context, botSpaceID string, limit int, before *string) ([]types.Artifact, error)
+	Delete(ctx context.Context, id string) error
+}
+
 type BotSkillDB interface {
 	Insert(ctx context.Context, skill types.BotSkill) (types.BotSkill, error)
 	GetByID(ctx context.Context, id string) (types.BotSkill, error)

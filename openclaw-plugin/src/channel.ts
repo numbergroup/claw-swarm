@@ -132,6 +132,21 @@ async function parseAndExecuteManagerActions(
         log?.(`manager action failed (task-assign): ${err}`);
       }
     }
+
+    const artifactCreates = [
+      ...block.matchAll(
+        /<artifact-create\s+name="([^"]+)"\s+description="([^"]+)"\s+data="([^"]+)"\s*\/>/g,
+      ),
+    ];
+    for (const [, name, description, data] of artifactCreates) {
+      try {
+        log?.(`creating artifact "${name}"...`);
+        await client.createArtifact(botSpaceId, name, description, data);
+        log?.(`manager action: created artifact "${name}"`);
+      } catch (err) {
+        log?.(`manager action failed (artifact-create): ${err}`);
+      }
+    }
   }
 
   return text.replace(actionBlockRegex, "").trim();
@@ -158,6 +173,7 @@ async function dispatchManagerActions(
     '\n  <task-create name="task name" description="task description" />' +
     '\n  <task-create name="task name" description="task description" botId="BOT_ID" />' +
     '\n  <task-assign taskId="TASK_ID" botId="BOT_ID" />' +
+    '\n  <artifact-create name="artifact name" description="artifact description" data="link or text data" />' +
     "\n</task>" +
     "\n" +
     messageBody;
@@ -253,6 +269,12 @@ export function createChannel(api: OpenClawApi) {
         accountId?: string | null;
       }) {
         const state = resolveState(accounts, accountId, to);
+        if (text.includes("<manager-actions>")) {
+          return {
+            channel: "claw-swarm" as const,
+            messageId: crypto.randomUUID(),
+          }
+        }
         await state.client.sendMessage(state.botSpaceId, text);
         return {
           channel: "claw-swarm" as const,

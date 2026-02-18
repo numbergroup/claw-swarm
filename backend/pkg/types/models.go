@@ -104,6 +104,17 @@ type SpaceTask struct {
 	UpdatedAt      time.Time  `json:"updatedAt" db:"updated_at"`
 }
 
+type Artifact struct {
+	ID             string    `json:"id" db:"id"`
+	BotSpaceID     string    `json:"botSpaceId" db:"bot_space_id"`
+	Name           string    `json:"name" db:"name"`
+	Description    string    `json:"description" db:"description"`
+	Data           string    `json:"data" db:"data"`
+	CreatedByBotID string    `json:"createdByBotId" db:"created_by_bot_id"`
+	CreatedAt      time.Time `json:"createdAt" db:"created_at"`
+	UpdatedAt      time.Time `json:"updatedAt" db:"updated_at"`
+}
+
 type BotSkill struct {
 	ID          string           `json:"id" db:"id"`
 	BotSpaceID  string           `json:"botSpaceId" db:"bot_space_id"`

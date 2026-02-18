@@ -76,6 +76,11 @@ func main() {
 		log.WithError(err).Fatal("failed to create space task db")
 	}
 
+	artifactDB, err := db.NewArtifactDB(ctx, conf, sdb)
+	if err != nil {
+		log.WithError(err).Fatal("failed to create artifact db")
+	}
+
 	hub := ws.NewHub(log)
 
 	rh := routes.NewRouteHandler(
@@ -90,6 +95,7 @@ func main() {
 		inviteCodeDB,
 		botSkillDB,
 		spaceTaskDB,
+		artifactDB,
 		hub,
 	)
 

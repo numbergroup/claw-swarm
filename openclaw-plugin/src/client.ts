@@ -1,4 +1,5 @@
 import type {
+  CsArtifact,
   CsBotRegistrationResponse,
   CsBotSpace,
   CsBotStatus,
@@ -317,6 +318,46 @@ export class ClawSwarmClient {
     if (!res.ok) {
       const text = await res.text();
       throw new Error(`assignTask failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  // ── Artifacts ────────────────────────────────────────────────────
+
+  async createArtifact(
+    botSpaceId: string,
+    name: string,
+    description: string,
+    data: string,
+  ): Promise<CsArtifact> {
+    this.log(`createArtifact: botSpaceId=${botSpaceId} name=${name}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/artifacts`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${this.token}`,
+        },
+        body: JSON.stringify({ name, description, data }),
+      },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`createArtifact failed (${res.status}): ${text}`);
+    }
+    return res.json();
+  }
+
+  async listArtifacts(botSpaceId: string): Promise<CsArtifact[]> {
+    this.log(`listArtifacts: botSpaceId=${botSpaceId}`);
+    const res = await fetch(
+      `${this.apiUrl}/bot-spaces/${botSpaceId}/artifacts`,
+      { headers: { Authorization: `Bearer ${this.token}` } },
+    );
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(`listArtifacts failed (${res.status}): ${text}`);
     }
     return res.json();
   }
