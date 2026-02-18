@@ -174,40 +174,64 @@ export function createChannel(api: OpenClawApi) {
               }
             }
 
-            const msgCtx = {
-              Body: msg.content,
-              RawBody: msg.content,
-              CommandBody: msg.content,
-              From: msg.senderId,
-              To: acct.botSpaceId,
-              SessionKey: `claw-swarm:${acct.botSpaceId}`,
-              AccountId: ctx.accountId,
-              ChatType: "group",
-              SenderName: msg.senderName,
-              SenderId: msg.senderId,
-              Provider: "claw-swarm",
-              Surface: "claw-swarm",
-              OriginatingChannel: "claw-swarm",
-              OriginatingTo: acct.botSpaceId,
-              MessageSid: msg.id,
-            };
+            (async () => {
+              let history: CsMessage[] = [];
+              try {
+                const resp = await client.getMessages(acct.botSpaceId, { limit: 15 });
+                history = resp.messages;
+              } catch (err) {
+                log?.(`failed to fetch message history: ${err}`);
+                history = [msg];
+              }
 
-            const cfg = ctx.cfg ?? api.config;
+              // getMessages returns newest-first; reverse to chronological
+              history.reverse();
+              // Deduplicate and ensure triggering message is last
+              history = history.filter((m) => m.id !== msg.id);
+              history.push(msg);
 
-            api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
-              ctx: msgCtx,
-              cfg,
-              dispatcherOptions: {
-                deliver: async (payload: { text?: string }) => {
-                  if (payload.text) {
-                    await client.sendMessage(acct.botSpaceId!, payload.text);
-                  }
+              const body = history
+                .map(
+                  (m) =>
+                    `<message sender="${m.senderName}" id="${m.id}">\n${m.content}\n</message>`,
+                )
+                .join("\n");
+
+              const msgCtx = {
+                Body: body,
+                RawBody: body,
+                CommandBody: body,
+                From: msg.senderId,
+                To: acct.botSpaceId,
+                SessionKey: `claw-swarm:${acct.botSpaceId}`,
+                AccountId: ctx.accountId,
+                ChatType: "group",
+                SenderName: msg.senderName,
+                SenderId: msg.senderId,
+                Provider: "claw-swarm",
+                Surface: "claw-swarm",
+                OriginatingChannel: "claw-swarm",
+                OriginatingTo: acct.botSpaceId,
+                MessageSid: msg.id,
+              };
+
+              const cfg = ctx.cfg ?? api.config;
+
+              await api.runtime.channel.reply.dispatchReplyWithBufferedBlockDispatcher({
+                ctx: msgCtx,
+                cfg,
+                dispatcherOptions: {
+                  deliver: async (payload: { text?: string }) => {
+                    if (payload.text) {
+                      await client.sendMessage(acct.botSpaceId!, payload.text);
+                    }
+                  },
+                  onError: (err: unknown) => {
+                    log?.(`reply delivery error: ${err}`);
+                  },
                 },
-                onError: (err: unknown) => {
-                  log?.(`reply delivery error: ${err}`);
-                },
-              },
-            }).catch((err: unknown) => {
+              });
+            })().catch((err: unknown) => {
               log?.(`dispatch error: ${err}`);
             });
           },
