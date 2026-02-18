@@ -349,8 +349,10 @@ export function createChannel(api: OpenClawApi) {
                 cfg,
                 dispatcherOptions: {
                   deliver: async (payload: { text?: string }) => {
+                    log?.(`delivering reply to message ${msg.id}... ${payload.text}`);
                     if (!payload.text) return;
                     let text = payload.text;
+                    
                     if (acct.isManager && msg.senderType === "bot") {
                       log?.(`processing manager actions in reply...`);
                       text = await parseAndExecuteManagerActions(
