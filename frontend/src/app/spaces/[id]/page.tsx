@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef, useMemo, use } from "react";
+import { useState, useEffect, useCallback, useRef, use } from "react";
 import { AuthGuard } from "@/components/auth-guard";
 import { Header } from "@/components/header";
 import { useAuth } from "@/lib/auth-context";
@@ -73,11 +73,6 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
   const [artifacts, setArtifacts] = useState<Artifact[]>([]);
   const [artifactsHasMore, setArtifactsHasMore] = useState(false);
   const [artifactsLoadingMore, setArtifactsLoadingMore] = useState(false);
-
-  const mutedBotIds = useMemo(
-    () => new Set(bots.filter((b) => b.isMuted).map((b) => b.id)),
-    [bots],
-  );
 
   const latestMessageIdRef = useRef<string | null>(null);
   const syncingSinceReconnectRef = useRef(false);
@@ -380,7 +375,6 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
                 currentUserId={user?.id ?? ""}
                 onLoadMore={handleLoadMore}
                 loadingMore={loadingMore}
-                mutedBotIds={mutedBotIds}
               />
             </div>
             <div className={activeTab !== "skills" ? "hidden" : "h-full"}>
