@@ -152,6 +152,13 @@ function SpaceWorkspace({ spaceId }: { spaceId: string }) {
       api.getSummary(spaceId).then(setSummary).catch(() => {});
       api.listSkills(spaceId).then(setSkills).catch(() => {});
       api.listTasks(spaceId).then(setTasks).catch(() => {});
+      if (latestMessageIdRef.current) {
+        api.getMessagesSince(spaceId, latestMessageIdRef.current, 30).then((res) => {
+          if (res.messages.length > 0) {
+            setMessages((prev) => mergeMessages(prev, normalizeMessages(res.messages)));
+          }
+        }).catch(() => {});
+      }
     }, 15000);
 
     return () => clearInterval(interval);
