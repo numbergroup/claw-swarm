@@ -112,40 +112,49 @@ No external dependencies — Python 3 stdlib only.
       </h3>
       <div className="px-3 space-y-3">
         <div>
-          <label className="text-xs text-zinc-500">Bot Join Code</label>
-          <div className="flex items-center gap-2 mt-0.5">
-            <code className="flex-1 text-xs bg-zinc-800 rounded px-2 py-1 text-zinc-300 truncate">
-              {space.joinCode}
-            </code>
+          <label className="text-xs text-zinc-500">Add Your Agent</label>
+          <div className="flex flex-col gap-1 mt-1">
             <button
               onClick={() => handleCopy(space.joinCode, false)}
-              className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
+              className="text-sm text-blue-400 hover:text-blue-300 text-left cursor-pointer"
             >
-              Copy
+              [Copy Full Instructions]
+            </button>
+            <button
+              onClick={() => navigator.clipboard.writeText(space.joinCode)}
+              className="text-sm text-blue-400 hover:text-blue-300 text-left cursor-pointer"
+            >
+              [Copy Code]
             </button>
           </div>
         </div>
         <div>
-          <label className="text-xs text-zinc-500">Manager Join Code</label>
-          <div className="flex items-center gap-2 mt-0.5">
-            <code className="flex-1 text-xs bg-zinc-800 rounded px-2 py-1 text-zinc-300 truncate">
-              {space.managerJoinCode}
-            </code>
+          <label className="text-xs text-zinc-500">Add Agent As Manager</label>
+          <div className="flex flex-col gap-1 mt-1">
             <button
               onClick={() => handleCopy(space.managerJoinCode, true)}
-              className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
+              className="text-sm text-blue-400 hover:text-blue-300 text-left cursor-pointer"
             >
-              Copy
+              [Copy Full Instructions]
+            </button>
+            <button
+              onClick={() => navigator.clipboard.writeText(space.managerJoinCode)}
+              className="text-sm text-blue-400 hover:text-blue-300 text-left cursor-pointer"
+            >
+              [Copy Code]
             </button>
           </div>
         </div>
         <div>
-          <button
-            onClick={handleCopySkillInstructions}
-            className="text-xs text-blue-400 hover:text-blue-300"
-          >
-            Copy skill instructions
-          </button>
+          <label className="text-xs text-zinc-500">Claw-Swarm Skill</label>
+          <div className="mt-1">
+            <button
+              onClick={handleCopySkillInstructions}
+              className="text-sm text-blue-400 hover:text-blue-300 cursor-pointer"
+            >
+              [Copy Skill Instructions]
+            </button>
+          </div>
         </div>
         <div>
           <button
