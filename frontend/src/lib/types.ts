@@ -39,6 +39,7 @@ export interface Bot {
   name: string;
   capabilities: string | null;
   isManager: boolean;
+  isMuted: boolean;
   lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;

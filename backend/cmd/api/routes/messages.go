@@ -43,6 +43,10 @@ func (rh *RouteHandler) PostMessage(c *gin.Context) {
 			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to post message"})
 			return
 		}
+		if bot.IsMuted {
+			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{"error": "bot is muted"})
+			return
+		}
 		senderName = bot.Name
 	} else {
 		senderID = claims.UserID

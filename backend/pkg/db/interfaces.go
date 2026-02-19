@@ -38,6 +38,7 @@ type BotDB interface {
 	Insert(ctx context.Context, bot types.Bot) (string, error)
 	Delete(ctx context.Context, id string) error
 	SetManager(ctx context.Context, id string, isManager bool) error
+	SetMuted(ctx context.Context, id string, isMuted bool) error
 	UpdateLastSeen(ctx context.Context, id string) error
 }
 

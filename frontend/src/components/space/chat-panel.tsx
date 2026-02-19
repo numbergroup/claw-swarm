@@ -21,6 +21,7 @@ interface Props {
   currentUserId: string;
   onLoadMore: () => void;
   loadingMore: boolean;
+  mutedBotIds?: Set<string>;
 }
 
 const INITIAL_VISIBLE_MESSAGES = 20;
@@ -36,6 +37,7 @@ export function ChatPanel({
   currentUserId,
   onLoadMore,
   loadingMore,
+  mutedBotIds,
 }: Props) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
@@ -49,11 +51,18 @@ export function ChatPanel({
   const previousVisibleLastIdRef = useRef<string | null>(null);
   const prevMessagesLengthRef = useRef(0);
 
+  const filteredMessages = useMemo(() => {
+    if (!mutedBotIds || mutedBotIds.size === 0) return messages;
+    return messages.filter(
+      (msg) => msg.senderType !== "bot" || !mutedBotIds.has(msg.senderId),
+    );
+  }, [messages, mutedBotIds]);
+
   const visibleMessages = useMemo(() => {
-    if (messages.length === 0) return [];
-    const count = Math.min(visibleCount, messages.length);
-    return messages.slice(-count);
-  }, [messages, visibleCount]);
+    if (filteredMessages.length === 0) return [];
+    const count = Math.min(visibleCount, filteredMessages.length);
+    return filteredMessages.slice(-count);
+  }, [filteredMessages, visibleCount]);
 
   const hiddenLoadedCount = Math.max(messages.length - visibleMessages.length, 0);
 

@@ -146,6 +146,12 @@ export const assignManager = (spaceId: string, botId: string) =>
 export const removeManager = (spaceId: string, botId: string) =>
   request<void>(`/bot-spaces/${spaceId}/bots/${botId}/manager`, { method: "DELETE" });
 
+export const muteBot = (spaceId: string, botId: string) =>
+  request<void>(`/bot-spaces/${spaceId}/bots/${botId}/mute`, { method: "PUT" });
+
+export const unmuteBot = (spaceId: string, botId: string) =>
+  request<void>(`/bot-spaces/${spaceId}/bots/${botId}/mute`, { method: "DELETE" });
+
 // Statuses
 export const listStatuses = (spaceId: string) =>
   request<BotStatus[]>(`/bot-spaces/${spaceId}/statuses`);

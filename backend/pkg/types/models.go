@@ -48,6 +48,7 @@ type Bot struct {
 	Name         string     `json:"name" db:"name"`
 	Capabilities *string    `json:"capabilities" db:"capabilities"`
 	IsManager    bool       `json:"isManager" db:"is_manager"`
+	IsMuted      bool       `json:"isMuted" db:"is_muted"`
 	LastSeenAt   *time.Time `json:"lastSeenAt" db:"last_seen_at"`
 	CreatedAt    time.Time  `json:"createdAt" db:"created_at"`
 	UpdatedAt    time.Time  `json:"updatedAt" db:"updated_at"`

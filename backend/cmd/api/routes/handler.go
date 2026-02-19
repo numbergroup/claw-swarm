@@ -113,6 +113,8 @@ func (rh *RouteHandler) ApplyRoutes(r *gin.Engine) {
 		space.DELETE("/bots/:botId", rh.RemoveBot)
 		space.PUT("/bots/:botId/manager", rh.AssignManager)
 		space.DELETE("/bots/:botId/manager", rh.RemoveManagerRole)
+		space.PUT("/bots/:botId/mute", rh.MuteBot)
+		space.DELETE("/bots/:botId/mute", rh.UnmuteBot)
 
 		// messages
 		space.POST("/messages", rh.PostMessage)

@@ -22,6 +22,7 @@ type botDB struct {
 	insert           *sqlx.NamedStmt
 	deleteStmt       *sqlx.Stmt
 	setManager       *sqlx.Stmt
+	setMuted         *sqlx.Stmt
 	updateLastSeen   *sqlx.Stmt
 }
 
@@ -61,6 +62,12 @@ func NewBotDB(ctx context.Context, conf *config.Config, sdb *sqlx.DB) (BotDB, er
 		return nil, errors.Wrap(err, "failed to prepare setManager statement")
 	}
 
+	setMuted, err := sdb.PreparexContext(ctx,
+		`UPDATE bots SET is_muted = $1, updated_at = now() WHERE id = $2`)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to prepare setMuted statement")
+	}
+
 	updateLastSeen, err := sdb.PreparexContext(ctx,
 		`UPDATE bots SET last_seen_at = now() WHERE id = $1`)
 	if err != nil {
@@ -76,6 +83,7 @@ func NewBotDB(ctx context.Context, conf *config.Config, sdb *sqlx.DB) (BotDB, er
 		insert:           insert,
 		deleteStmt:       deleteStmt,
 		setManager:       setManager,
+		setMuted:         setMuted,
 		updateLastSeen:   updateLastSeen,
 	}, nil
 }
@@ -119,6 +127,14 @@ func (b *botDB) SetManager(ctx context.Context, id string, isManager bool) error
 	_, err := b.setManager.ExecContext(ctx, isManager, id)
 	if err != nil {
 		return errors.Wrap(err, "failed to set manager")
+	}
+	return nil
+}
+
+func (b *botDB) SetMuted(ctx context.Context, id string, isMuted bool) error {
+	_, err := b.setMuted.ExecContext(ctx, isMuted, id)
+	if err != nil {
+		return errors.Wrap(err, "failed to set muted")
 	}
 	return nil
 }

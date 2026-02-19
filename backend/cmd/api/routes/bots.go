@@ -183,3 +183,78 @@ func (rh *RouteHandler) RemoveManagerRole(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+func (rh *RouteHandler) MuteBot(c *gin.Context) {
+	_, botSpaceID, ok := rh.requireOwner(c)
+	if !ok {
+		return
+	}
+
+	botID, err := server.GetUUIDParam(c, "botId")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid botId"})
+		return
+	}
+
+	bot, err := rh.botDB.GetByID(c, botID.String())
+	if err != nil {
+		if ngerrors.Cause(err) == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "bot not found"})
+			return
+		}
+		rh.log.WithError(err).Error("failed to get bot")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to mute bot"})
+		return
+	}
+
+	if bot.BotSpaceID != botSpaceID {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "bot not found"})
+		return
+	}
+
+	if err := rh.botDB.SetMuted(c, botID.String(), true); err != nil {
+		rh.log.WithError(err).Error("failed to mute bot")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to mute bot"})
+		return
+	}
+
+	bot.IsMuted = true
+	c.JSON(http.StatusOK, bot)
+}
+
+func (rh *RouteHandler) UnmuteBot(c *gin.Context) {
+	_, botSpaceID, ok := rh.requireOwner(c)
+	if !ok {
+		return
+	}
+
+	botID, err := server.GetUUIDParam(c, "botId")
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": "invalid botId"})
+		return
+	}
+
+	bot, err := rh.botDB.GetByID(c, botID.String())
+	if err != nil {
+		if ngerrors.Cause(err) == sql.ErrNoRows {
+			c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "bot not found"})
+			return
+		}
+		rh.log.WithError(err).Error("failed to get bot")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to unmute bot"})
+		return
+	}
+
+	if bot.BotSpaceID != botSpaceID {
+		c.AbortWithStatusJSON(http.StatusNotFound, gin.H{"error": "bot not found"})
+		return
+	}
+
+	if err := rh.botDB.SetMuted(c, botID.String(), false); err != nil {
+		rh.log.WithError(err).Error("failed to unmute bot")
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "failed to unmute bot"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
