@@ -57,13 +57,13 @@ export function InviteCodesPanel({ spaceId, codes, onUpdated }: Props) {
           codes.map((code) => (
             <div key={code.id} className="flex items-center gap-2">
               <code className="flex-1 text-xs bg-zinc-800 rounded px-2 py-1 text-zinc-300 truncate">
-                {code.code}
+                {code.code.slice(0, 4)}...
               </code>
               <button
                 onClick={() => handleCopy(code.code)}
                 className="text-xs text-blue-400 hover:text-blue-300 shrink-0"
               >
-                Copy
+                Copy Invite Link
               </button>
               <button
                 onClick={() => handleRevoke(code.id)}
