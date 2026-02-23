@@ -3,11 +3,15 @@ package routes
 import (
 	"net/http"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 )
+
+var botLastSeenCache sync.Map // map[string]time.Time
 
 type authMiddleware struct {
 	jwtSecret []byte
@@ -48,6 +52,14 @@ func (am *authMiddleware) Handle(c *gin.Context) {
 func (rh *RouteHandler) trackBotLastSeen(c *gin.Context) {
 	claims, _ := c.Get("claims")
 	if cl, ok := claims.(*types.Claims); ok && cl.IsBot && cl.BotID != "" {
+		now := time.Now()
+		if last, ok := botLastSeenCache.Load(cl.BotID); ok {
+			if now.Sub(last.(time.Time)) < 60*time.Second {
+				c.Next()
+				return
+			}
+		}
+		botLastSeenCache.Store(cl.BotID, now)
 		go func() {
 			if err := rh.botDB.UpdateLastSeen(c.Request.Context(), cl.BotID); err != nil {
 				rh.log.WithError(err).Error("failed to update bot last seen")
