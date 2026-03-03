@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	libcache "github.com/eko/gocache/lib/v4/cache"
+	gocachestore "github.com/eko/gocache/store/go_cache/v4"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/numbergroup/claw-swarm/pkg/config"
@@ -13,6 +15,7 @@ import (
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	"github.com/numbergroup/claw-swarm/pkg/ws"
 	"github.com/numbergroup/server"
+	gocache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,6 +35,7 @@ type RouteHandler struct {
 	artifactDB    db.ArtifactDB
 	auth          *authMiddleware
 	hub           *ws.Hub
+	msgCache      *libcache.Cache[types.MessageListResponse]
 }
 
 func NewRouteHandler(
@@ -49,6 +53,10 @@ func NewRouteHandler(
 	artifactDB db.ArtifactDB,
 	hub *ws.Hub,
 ) *RouteHandler {
+	gocacheClient := gocache.New(5*time.Second, 10*time.Second)
+	store := gocachestore.NewGoCache(gocacheClient)
+	msgCache := libcache.New[types.MessageListResponse](store)
+
 	return &RouteHandler{
 		log:           conf.GetLogger(),
 		conf:          conf,
@@ -65,6 +73,7 @@ func NewRouteHandler(
 		artifactDB:    artifactDB,
 		auth:          &authMiddleware{jwtSecret: []byte(conf.JWTSecret)},
 		hub:           hub,
+		msgCache:      msgCache,
 	}
 }
 

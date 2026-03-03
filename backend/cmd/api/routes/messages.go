@@ -2,6 +2,7 @@ package routes
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -106,6 +107,12 @@ func (rh *RouteHandler) ListMessages(c *gin.Context) {
 		before = &b
 	}
 
+	cacheKey := fmt.Sprintf("list:%s:%d:%v", botSpaceID, limit, before)
+	if cached, err := rh.msgCache.Get(c, cacheKey); err == nil {
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
 	messages, err := rh.messageDB.ListByBotSpaceID(c, botSpaceID, limit+1, before)
 	if err != nil {
 		rh.log.WithError(err).Error("failed to list messages")
@@ -118,11 +125,16 @@ func (rh *RouteHandler) ListMessages(c *gin.Context) {
 		messages = messages[:limit]
 	}
 
-	c.JSON(http.StatusOK, types.MessageListResponse{
+	resp := types.MessageListResponse{
 		Messages: messages,
 		Count:    len(messages),
 		HasMore:  hasMore,
-	})
+	}
+	err = rh.msgCache.Set(c, cacheKey, resp)
+	if err != nil {
+		rh.log.WithError(err).Error("failed to set message list cache")
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (rh *RouteHandler) GetMessagesSince(c *gin.Context) {
@@ -143,6 +155,12 @@ func (rh *RouteHandler) GetMessagesSince(c *gin.Context) {
 		return
 	}
 
+	cacheKey := fmt.Sprintf("since:%s:%s:%d", botSpaceID, messageID.String(), limit)
+	if cached, err := rh.msgCache.Get(c, cacheKey); err == nil {
+		c.JSON(http.StatusOK, cached)
+		return
+	}
+
 	messages, err := rh.messageDB.ListSince(c, botSpaceID, messageID.String(), limit+1)
 	if err != nil {
 		rh.log.WithError(err).Error("failed to list messages since")
@@ -155,11 +173,16 @@ func (rh *RouteHandler) GetMessagesSince(c *gin.Context) {
 		messages = messages[:limit]
 	}
 
-	c.JSON(http.StatusOK, types.MessageListResponse{
+	resp := types.MessageListResponse{
 		Messages: messages,
 		Count:    len(messages),
 		HasMore:  hasMore,
-	})
+	}
+	err = rh.msgCache.Set(c, cacheKey, resp)
+	if err != nil {
+		rh.log.WithError(err).Error("failed to set message list cache")
+	}
+	c.JSON(http.StatusOK, resp)
 }
 
 func (rh *RouteHandler) SubscribeMessages(c *gin.Context) {

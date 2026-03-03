@@ -4,27 +4,32 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
+	libcache "github.com/eko/gocache/lib/v4/cache"
+	gocachestore "github.com/eko/gocache/store/go_cache/v4"
 	"github.com/innodv/psql"
 	"github.com/jmoiron/sqlx"
 	"github.com/numbergroup/claw-swarm/pkg/config"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	"github.com/numbergroup/errors"
+	gocache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"
 )
 
 type messageDB struct {
-	db                          *sqlx.DB
-	log                         logrus.Ext1FieldLogger
-	conf                        *config.Config
-	insert                      *sqlx.NamedStmt
-	listRecent                  *sqlx.Stmt
-	listBeforeCursor            *sqlx.Stmt
-	listSinceCursor             *sqlx.Stmt
-	getCreatedAt                *sqlx.Stmt
-	listSpaceIDsExceedingCount  *sqlx.Stmt
-	getNthNewestCreatedAt       *sqlx.Stmt
-	deleteOlderThan             *sqlx.Stmt
+	db                         *sqlx.DB
+	log                        logrus.Ext1FieldLogger
+	conf                       *config.Config
+	insert                     *sqlx.NamedStmt
+	listRecent                 *sqlx.Stmt
+	listBeforeCursor           *sqlx.Stmt
+	listSinceCursor            *sqlx.Stmt
+	getCreatedAt               *sqlx.Stmt
+	listSpaceIDsExceedingCount *sqlx.Stmt
+	getNthNewestCreatedAt      *sqlx.Stmt
+	deleteOlderThan            *sqlx.Stmt
+	cursorTimeCache            *libcache.Cache[any]
 }
 
 func NewMessageDB(ctx context.Context, conf *config.Config, sdb *sqlx.DB) (MessageDB, error) {
@@ -87,19 +92,43 @@ func NewMessageDB(ctx context.Context, conf *config.Config, sdb *sqlx.DB) (Messa
 		return nil, errors.Wrap(err, "failed to prepare deleteOlderThan statement")
 	}
 
+	gocacheClient := gocache.New(10*time.Minute, 15*time.Minute)
+	store := gocachestore.NewGoCache(gocacheClient)
+	cursorTimeCache := libcache.New[any](store)
+
 	return &messageDB{
-		db:                          sdb,
-		log:                         conf.GetLogger(),
-		conf:                        conf,
-		insert:                      insert,
-		listRecent:                  listRecent,
-		listBeforeCursor:            listBeforeCursor,
-		listSinceCursor:             listSinceCursor,
-		getCreatedAt:                getCreatedAt,
-		listSpaceIDsExceedingCount:  listSpaceIDsExceedingCount,
-		getNthNewestCreatedAt:       getNthNewestCreatedAt,
-		deleteOlderThan:             deleteOlderThan,
+		db:                         sdb,
+		log:                        conf.GetLogger(),
+		conf:                       conf,
+		insert:                     insert,
+		listRecent:                 listRecent,
+		listBeforeCursor:           listBeforeCursor,
+		listSinceCursor:            listSinceCursor,
+		getCreatedAt:               getCreatedAt,
+		listSpaceIDsExceedingCount: listSpaceIDsExceedingCount,
+		getNthNewestCreatedAt:      getNthNewestCreatedAt,
+		deleteOlderThan:            deleteOlderThan,
+		cursorTimeCache:            cursorTimeCache,
 	}, nil
+}
+
+func (m *messageDB) getCursorTime(ctx context.Context, messageID string) (any, error) {
+	cached, err := m.cursorTimeCache.Get(ctx, messageID)
+	if err == nil {
+		return cached, nil
+	}
+
+	var cursorTime any
+	err = m.getCreatedAt.GetContext(ctx, &cursorTime, messageID)
+	if err != nil {
+		return nil, err
+	}
+
+	err = m.cursorTimeCache.Set(ctx, messageID, cursorTime)
+	if err != nil {
+		m.log.WithError(err).Error("failed to set cursor time cache")
+	}
+	return cursorTime, nil
 }
 
 func (m *messageDB) Insert(ctx context.Context, msg types.Message) (string, error) {
@@ -122,8 +151,7 @@ func (m *messageDB) ListByBotSpaceID(ctx context.Context, botSpaceID string, lim
 		return messages, nil
 	}
 
-	var cursorTime any
-	err := m.getCreatedAt.GetContext(ctx, &cursorTime, *before)
+	cursorTime, err := m.getCursorTime(ctx, *before)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cursor message created_at")
 	}
@@ -136,8 +164,7 @@ func (m *messageDB) ListByBotSpaceID(ctx context.Context, botSpaceID string, lim
 }
 
 func (m *messageDB) ListSince(ctx context.Context, botSpaceID string, sinceID string, limit int) ([]types.Message, error) {
-	var cursorTime any
-	err := m.getCreatedAt.GetContext(ctx, &cursorTime, sinceID)
+	cursorTime, err := m.getCursorTime(ctx, sinceID)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to get cursor message created_at")
 	}
