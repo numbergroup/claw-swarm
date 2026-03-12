@@ -62,7 +62,7 @@ func (rh *RouteHandler) trackBotLastSeen(c *gin.Context) {
 		botLastSeenCache.Store(cl.BotID, now)
 		go func() {
 			if err := rh.botDB.UpdateLastSeen(c.Request.Context(), cl.BotID); err != nil {
-				rh.log.WithError(err).Error("failed to update bot last seen")
+				rh.log.WithError(err).Debug("failed to update bot last seen")
 			}
 		}()
 	}
