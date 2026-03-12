@@ -45,7 +45,7 @@ service:
   protocol: TCP
   targetPort: 8080
 
-verbosity: debug
+verbosity: error
 
 # Shared environment variables
 environment:
