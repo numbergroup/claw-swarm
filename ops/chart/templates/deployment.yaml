@@ -50,6 +50,10 @@ spec:
       {{- if .serviceAccountName }}
       serviceAccountName: {{ .serviceAccountName }}
       {{- end }}
+      {{- if $.Values.imagePullSecret }}
+      imagePullSecrets:
+        - name: {{ $.Values.imagePullSecret }}
+      {{- end }}
       securityContext:
         runAsNonRoot: true
         seccompProfile:

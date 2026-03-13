@@ -1,8 +1,9 @@
 version: latest
-image: 
+image:
 namespace: default
-projectId: 
+projectId:
 secretName:
+imagePullSecret:
 
 serviceAccounts:
 - claw-swarm

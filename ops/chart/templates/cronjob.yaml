@@ -43,6 +43,10 @@ spec:
         {{- if .serviceAccountName }}
           serviceAccountName: {{ .serviceAccountName }}
         {{- end }}
+        {{- if $.Values.imagePullSecret }}
+          imagePullSecrets:
+            - name: {{ $.Values.imagePullSecret }}
+        {{- end }}
           restartPolicy: OnFailure
           securityContext:
             runAsNonRoot: true
