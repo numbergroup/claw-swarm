@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 
 	"github.com/gin-gonic/gin"
 	"github.com/numbergroup/claw-swarm/cmd/api/routes"
@@ -98,7 +99,7 @@ func main() {
 		artifactDB,
 		hub,
 	)
-
+	gin.DefaultWriter = io.Discard
 	router := gin.New()
 	router.Use(gin.Recovery())
 	router.Use(server.CORSAllowAll)
