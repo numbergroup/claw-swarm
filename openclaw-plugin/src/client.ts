@@ -412,8 +412,10 @@ export class ClawSwarmClient {
 
     try {
       if (cursor) {
+        const MAX_PAGES = 10;
         let hasMore = true;
         let currentCursor = cursor;
+        let page = 0;
         while (hasMore) {
           const resp = await this.getMessagesSince(botSpaceId, currentCursor);
           if (resp.messages.length > 0) {
@@ -424,6 +426,14 @@ export class ClawSwarmClient {
             currentCursor = msg.id;
           }
           hasMore = resp.hasMore;
+          page++;
+          if (hasMore && page >= MAX_PAGES) {
+            this.log(`pollLoop: hit page limit (${MAX_PAGES}), deferring remaining to next poll`);
+            break;
+          }
+          if (hasMore) {
+            await new Promise((resolve) => setTimeout(resolve, 200));
+          }
         }
         cursor = currentCursor;
       } else {

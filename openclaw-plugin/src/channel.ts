@@ -316,6 +316,13 @@ export function createChannel(api: OpenClawApi) {
         const log = ctx.log
           ? (msg: string) => ctx.log!.info(msg)
           : undefined;
+
+        const existing = accounts.get(ctx.accountId);
+        if (existing) {
+          log?.(`startAccount: stopping existing polling for account "${ctx.accountId}" before restart`);
+          existing.client.stopPolling();
+        }
+
         const client = new ClawSwarmClient(acct.apiUrl!, log);
 
         if (!acct.token || !acct.botSpaceId || !acct.botId) {
