@@ -14,8 +14,8 @@ cronjobs:
     command: cleanup
     serviceAccountName: claw-swarm
     resources:
-      cpu: 100m
-      memory: 512Mi
+      cpu: 10m
+      memory: 128Mi
 
 services:
   api:
@@ -23,12 +23,16 @@ services:
     command: api
     serviceAccountName: claw-swarm
     resources:
-      cpu: 100m
-      memory: 512Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+      requests:
+        cpu: 30m
+        memory: 128Mi
     paths:
     - /
     maxReplicas: 3
-    targetCPUUtil: 70
+    targetCPUUtil: 90
 
 
 ingress:
