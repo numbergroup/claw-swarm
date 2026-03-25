@@ -110,10 +110,7 @@ spec:
             periodSeconds: 5
 {{- end }}
           resources:
-            limits:
-              {{- toYaml .resources | nindent 14 }}
-            requests:
-              {{- toYaml .resources | nindent 14 }}
+          {{- toYaml .resources | nindent 12 }}
 ---
 {{ end }}
 {{ end }}
