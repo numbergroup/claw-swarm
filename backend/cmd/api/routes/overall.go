@@ -4,9 +4,9 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	ngerrors "github.com/numbergroup/errors"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 )
 

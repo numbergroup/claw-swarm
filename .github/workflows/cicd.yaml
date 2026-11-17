@@ -15,7 +15,7 @@ jobs:
       - name: Install Go
         uses: actions/setup-go@v6
         with:
-          go-version: ${{ vars.GO_VERSION }}
+          go-version-file: backend/go.mod
           cache-dependency-path: ./backend/go.sum
       - name: Download dependencies
         working-directory: backend
@@ -36,7 +36,7 @@ jobs:
     - name: Setup Golang
       uses: actions/setup-go@v6
       with:
-        go-version: ${{ vars.GO_VERSION }}
+        go-version-file: backend/go.mod
         cache-dependency-path: ./backend/go.sum
     - name: Download dependencies
       working-directory: backend
@@ -110,7 +110,7 @@ jobs:
       - name: Setup Golang
         uses: actions/setup-go@v6
         with:
-          go-version: ${{ vars.GO_VERSION }}
+          go-version-file: backend/go.mod
       - name: 'Start Cloud SQL Proxy'
         env:
           DB_PASSWORD: "${{ secrets.DB_PASSWORD }}"

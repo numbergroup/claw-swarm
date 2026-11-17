@@ -6,10 +6,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 	"github.com/numbergroup/claw-swarm/pkg/types"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 )
 

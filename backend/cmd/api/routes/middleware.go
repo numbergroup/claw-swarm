@@ -6,9 +6,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/numbergroup/claw-swarm/pkg/types"
+	"github.com/numbergroup/gin-light"
 )
 
 var botLastSeenCache sync.Map // map[string]time.Time
