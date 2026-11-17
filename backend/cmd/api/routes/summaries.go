@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	ngerrors "github.com/numbergroup/errors"
+	"github.com/numbergroup/gin-light"
 )
 
 const managerReminder = "\n\n---\nReminder: If any bot statuses have changed based on the above summary, please submit status updates using the status update endpoint."

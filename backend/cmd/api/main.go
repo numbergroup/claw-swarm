@@ -4,11 +4,11 @@ import (
 	"context"
 	"io"
 
-	"github.com/gin-gonic/gin"
 	"github.com/numbergroup/claw-swarm/cmd/api/routes"
 	"github.com/numbergroup/claw-swarm/pkg/config"
 	"github.com/numbergroup/claw-swarm/pkg/db"
 	"github.com/numbergroup/claw-swarm/pkg/ws"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 )
 

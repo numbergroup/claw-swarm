@@ -8,12 +8,12 @@ import (
 
 	libcache "github.com/eko/gocache/lib/v4/cache"
 	gocachestore "github.com/eko/gocache/store/go_cache/v4"
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/numbergroup/claw-swarm/pkg/config"
 	"github.com/numbergroup/claw-swarm/pkg/db"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	"github.com/numbergroup/claw-swarm/pkg/ws"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 	gocache "github.com/patrickmn/go-cache"
 	"github.com/sirupsen/logrus"

@@ -3,7 +3,7 @@ package routes
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 )
 

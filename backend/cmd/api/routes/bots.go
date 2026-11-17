@@ -4,8 +4,8 @@ import (
 	"database/sql"
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	ngerrors "github.com/numbergroup/errors"
+	"github.com/numbergroup/gin-light"
 	"github.com/numbergroup/server"
 )
 

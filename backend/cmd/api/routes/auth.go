@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/numbergroup/claw-swarm/pkg/types"
 	ngerrors "github.com/numbergroup/errors"
+	"github.com/numbergroup/gin-light"
 	"golang.org/x/crypto/bcrypt"
 )
 
